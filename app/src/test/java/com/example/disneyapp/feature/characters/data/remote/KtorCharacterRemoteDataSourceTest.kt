@@ -27,6 +27,12 @@ class KtorCharacterRemoteDataSourceTest {
                     respondJson(
                         """
                             {
+                              "info": {
+                                "count": 2,
+                                "totalPages": 1,
+                                "previousPage": null,
+                                "nextPage": null
+                              },
                               "data": [
                                 {
                                   "_id": 4703,
@@ -40,7 +46,17 @@ class KtorCharacterRemoteDataSourceTest {
                                   "sourceUrl": "https://disney.fandom.com/wiki/Mickey_Mouse",
                                   "name": "Mickey Mouse",
                                   "imageUrl": "https://example.com/mickey.jpg",
-                                  "url": "https://api.disneyapi.dev/characters/4703"
+                                  "url": "https://api.disneyapi.dev/characters/4703",
+                                  "createdAt": "2021-04-12T01:33:34.458Z",
+                                  "updatedAt": "2021-04-12T01:33:34.458Z",
+                                  "__v": 0
+                                },
+                                {
+                                  "_id": 293,
+                                  "films": null,
+                                  "shortFilms": [],
+                                  "name": "Arabella",
+                                  "url": "https://api.disneyapi.dev/characters/293"
                                 }
                               ]
                             }
@@ -53,10 +69,14 @@ class KtorCharacterRemoteDataSourceTest {
         val result = dataSource.getCharacters()
 
         val characters = result.successData()
-        assertThat(characters).hasSize(1)
+        assertThat(characters).hasSize(2)
         assertThat(characters.first().id).isEqualTo(4703)
         assertThat(characters.first().name).isEqualTo("Mickey Mouse")
         assertThat(characters.first().films).isEqualTo(listOf("Fantasia"))
+        assertThat(characters[1].id).isEqualTo(293)
+        assertThat(characters[1].imageUrl).isEqualTo(null)
+        assertThat(characters[1].films).isEqualTo(emptyList())
+        assertThat(characters[1].tvShows).isEqualTo(emptyList())
     }
 
     @Test
@@ -67,6 +87,9 @@ class KtorCharacterRemoteDataSourceTest {
                     respondJson(
                         """
                             {
+                              "info": {
+                                "count": 1
+                              },
                               "data": {
                                 "_id": 308,
                                 "films": ["Tangled"],
@@ -89,13 +112,40 @@ class KtorCharacterRemoteDataSourceTest {
     }
 
     @Test
+    fun `getCharacters returns serialization failure for malformed json`() = runTest {
+        val dataSource = KtorCharacterRemoteDataSource(
+            httpClient = HttpClientFactory.create(
+                MockEngine {
+                    respondJson("""{"data": [""")
+                },
+            ),
+        )
+
+        val result = dataSource.getCharacters()
+
+        assertThat(result).isEqualTo(Result.Failure(DataError.Network.SERIALIZATION))
+    }
+
+    @Test
     fun `searchCharacters sends name query parameter`() = runTest {
         var requestedUrl = ""
         val dataSource = KtorCharacterRemoteDataSource(
             httpClient = HttpClientFactory.create(
                 MockEngine { request ->
                     requestedUrl = request.url.toString()
-                    respondJson("""{"data": []}""")
+                    respondJson(
+                        """
+                            {
+                              "info": {
+                                "count": 0,
+                                "totalPages": 1,
+                                "previousPage": null,
+                                "nextPage": null
+                              },
+                              "data": []
+                            }
+                        """.trimIndent(),
+                    )
                 },
             ),
         )
