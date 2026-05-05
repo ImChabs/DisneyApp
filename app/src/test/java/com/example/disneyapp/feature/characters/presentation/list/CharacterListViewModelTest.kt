@@ -232,10 +232,12 @@ private val mickeyListItem = CharacterListItemUi(
     id = 4703,
     name = "Mickey Mouse",
     imageUrl = "https://example.com/mickey.jpg",
+    metadataBadges = listOf("1 film", "1 short", "1 show"),
 )
 
 private val minnieListItem = CharacterListItemUi(
     id = 1949,
     name = "Minnie Mouse",
     imageUrl = null,
+    metadataBadges = emptyList(),
 )

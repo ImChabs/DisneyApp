@@ -5,6 +5,7 @@ import com.example.disneyapp.core.domain.Result
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.statement.HttpResponse
+import io.ktor.serialization.JsonConvertException
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.nio.channels.UnresolvedAddressException
@@ -22,14 +23,30 @@ suspend inline fun <reified Response : Any> safeApiCall(
         Result.Failure(DataError.Network.REQUEST_TIMEOUT)
     } catch (exception: SocketTimeoutException) {
         Result.Failure(DataError.Network.REQUEST_TIMEOUT)
-    } catch (exception: SerializationException) {
+    } catch (exception: JsonConvertException) {
+        logSafeApiException(DataError.Network.SERIALIZATION, exception)
         Result.Failure(DataError.Network.SERIALIZATION)
+    } catch (exception: SerializationException) {
+        logSafeApiException(DataError.Network.SERIALIZATION, exception)
+        Result.Failure(DataError.Network.SERIALIZATION)
+    } catch (exception: SecurityException) {
+        logSafeApiException(DataError.Network.NO_INTERNET, exception)
+        Result.Failure(DataError.Network.NO_INTERNET)
     } catch (exception: IOException) {
         Result.Failure(DataError.Network.NO_INTERNET)
     } catch (exception: Exception) {
         if (exception is CancellationException) throw exception
+        logSafeApiException(DataError.Network.UNKNOWN, exception)
         Result.Failure(DataError.Network.UNKNOWN)
     }
+
+@PublishedApi
+internal fun logSafeApiException(error: DataError.Network, exception: Exception) {
+    println(
+        "DisneyApp safeApiCall mapped ${exception::class.qualifiedName} " +
+            "to $error: ${exception.message.orEmpty()}"
+    )
+}
 
 suspend inline fun <reified Response : Any> responseToResult(
     response: HttpResponse,

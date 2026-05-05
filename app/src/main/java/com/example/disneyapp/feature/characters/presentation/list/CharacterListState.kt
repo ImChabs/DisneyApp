@@ -17,6 +17,7 @@ data class CharacterListItemUi(
     val id: Int,
     val name: String,
     val imageUrl: String?,
+    val metadataBadges: List<String> = emptyList(),
 )
 
 fun DisneyCharacter.toCharacterListItemUi(): CharacterListItemUi =
@@ -24,4 +25,24 @@ fun DisneyCharacter.toCharacterListItemUi(): CharacterListItemUi =
         id = id,
         name = name?.takeIf { it.isNotBlank() } ?: "Unknown character",
         imageUrl = imageUrl,
+        metadataBadges = buildMetadataBadges(),
     )
+
+private fun DisneyCharacter.buildMetadataBadges(): List<String> =
+    buildList {
+        addCountBadge(films.size, singular = "film", plural = "films")
+        addCountBadge(shortFilms.size, singular = "short", plural = "shorts")
+        addCountBadge(tvShows.size, singular = "show", plural = "shows")
+        addCountBadge(videoGames.size, singular = "game", plural = "games")
+        addCountBadge(parkAttractions.size, singular = "park", plural = "parks")
+    }.take(3)
+
+private fun MutableList<String>.addCountBadge(
+    count: Int,
+    singular: String,
+    plural: String,
+) {
+    if (count > 0) {
+        add("$count ${if (count == 1) singular else plural}")
+    }
+}
