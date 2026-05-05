@@ -116,7 +116,7 @@ If a non-ViewModel class uses `withContext(Dispatchers.IO)` and is unit-tested, 
  
 ```kotlin
 class ImageCompressor(private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) {
-    suspend fun compress(bytes: ByteArray): ByteArray = withContext(ioDispatcher) { ... }
+    suspend fun compress(bytes: ByteArray): ByteArray = withContext(ioDispatcher) {  }
 }
  
 // In test:
