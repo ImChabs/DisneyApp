@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
+import assertk.assertions.isTrue
 import assertk.assertions.isInstanceOf
 import com.example.disneyapp.core.data.network.HttpClientFactory
 import com.example.disneyapp.core.domain.DataError
@@ -66,10 +67,14 @@ class KtorCharacterRemoteDataSourceTest {
             ),
         )
 
-        val result = dataSource.getCharacters()
+        val result = dataSource.getCharacters(page = 1, pageSize = 30)
 
-        val characters = result.successData()
+        val page = result.successData()
+        val characters = page.characters
         assertThat(characters).hasSize(2)
+        assertThat(page.currentPage).isEqualTo(1)
+        assertThat(page.pageSize).isEqualTo(30)
+        assertThat(page.totalPages).isEqualTo(1)
         assertThat(characters.first().id).isEqualTo(4703)
         assertThat(characters.first().name).isEqualTo("Mickey Mouse")
         assertThat(characters.first().films).isEqualTo(listOf("Fantasia"))
@@ -121,13 +126,45 @@ class KtorCharacterRemoteDataSourceTest {
             ),
         )
 
-        val result = dataSource.getCharacters()
+        val result = dataSource.getCharacters(page = 1, pageSize = 30)
 
         assertThat(result).isEqualTo(Result.Failure(DataError.Network.SERIALIZATION))
     }
 
     @Test
-    fun `searchCharacters sends name query parameter`() = runTest {
+    fun `getCharacters sends page query parameters`() = runTest {
+        var requestedUrl = ""
+        val dataSource = KtorCharacterRemoteDataSource(
+            httpClient = HttpClientFactory.create(
+                MockEngine { request ->
+                    requestedUrl = request.url.toString()
+                    respondJson(
+                        """
+                            {
+                              "info": {
+                                "count": 30,
+                                "totalPages": 2,
+                                "previousPage": null,
+                                "nextPage": "https://api.disneyapi.dev/character?page=2&pageSize=30"
+                              },
+                              "data": []
+                            }
+                        """.trimIndent(),
+                    )
+                },
+            ),
+        )
+
+        val result = dataSource.getCharacters(page = 1, pageSize = 30)
+
+        assertThat(result.successData().hasNextPage).isTrue()
+        assertThat(requestedUrl).contains("/character")
+        assertThat(requestedUrl).contains("page=1")
+        assertThat(requestedUrl).contains("pageSize=30")
+    }
+
+    @Test
+    fun `searchCharacters sends name and page query parameters`() = runTest {
         var requestedUrl = ""
         val dataSource = KtorCharacterRemoteDataSource(
             httpClient = HttpClientFactory.create(
@@ -150,11 +187,13 @@ class KtorCharacterRemoteDataSourceTest {
             ),
         )
 
-        val result = dataSource.searchCharacters(name = "Mickey Mouse")
+        val result = dataSource.searchCharacters(name = "Mickey Mouse", page = 2, pageSize = 20)
 
-        assertThat(result.successData()).isEqualTo(emptyList())
+        assertThat(result.successData().characters).isEqualTo(emptyList())
         assertThat(requestedUrl).contains("/character")
         assertThat(requestedUrl).contains("name=Mickey+Mouse")
+        assertThat(requestedUrl).contains("page=2")
+        assertThat(requestedUrl).contains("pageSize=20")
     }
 
     @Test

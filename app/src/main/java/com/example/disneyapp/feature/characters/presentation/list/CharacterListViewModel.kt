@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.disneyapp.core.domain.DataError
 import com.example.disneyapp.core.domain.Result
 import com.example.disneyapp.core.presentation.toUiText
-import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
 import com.example.disneyapp.feature.characters.domain.usecase.GetCharactersUseCase
 import com.example.disneyapp.feature.characters.domain.usecase.SearchCharactersUseCase
 import kotlinx.coroutines.Job
@@ -34,6 +33,7 @@ class CharacterListViewModel(
         when (action) {
             is CharacterListAction.OnSearchQueryChange -> onSearchQueryChange(action.query)
             CharacterListAction.OnRetryClick -> retry()
+            CharacterListAction.OnLoadMore -> loadMore()
         }
     }
 
@@ -43,6 +43,9 @@ class CharacterListViewModel(
             it.copy(
                 searchQuery = query,
                 isLoading = false,
+                isLoadingMore = false,
+                currentPage = 0,
+                canLoadMore = false,
                 error = null,
             )
         }
@@ -56,7 +59,11 @@ class CharacterListViewModel(
 
     private fun retry() {
         searchDebounceJob?.cancel()
-        submitQuery(query = state.value.searchQuery, force = true)
+        if (state.value.characters.isNotEmpty() && state.value.canLoadMore) {
+            loadMore()
+        } else {
+            submitQuery(query = state.value.searchQuery, force = true)
+        }
     }
 
     private fun submitQuery(
@@ -69,40 +76,97 @@ class CharacterListViewModel(
         lastSubmittedQuery = trimmedQuery
         requestJob?.cancel()
         requestJob = viewModelScope.launch {
-            handleCharactersResult {
-                if (trimmedQuery.isBlank()) {
-                    getCharactersUseCase()
-                } else {
-                    searchCharactersUseCase(trimmedQuery)
-                }
-            }
+            loadPage(query = trimmedQuery, page = FIRST_PAGE, replace = true)
         }
     }
 
-    private suspend fun handleCharactersResult(
-        request: suspend () -> Result<List<DisneyCharacter>, DataError.Network>,
-    ) {
-        _state.update { it.copy(isLoading = true, error = null) }
+    private fun loadMore() {
+        val currentState = state.value
+        if (
+            currentState.isLoading ||
+            currentState.isLoadingMore ||
+            !currentState.canLoadMore ||
+            currentState.characters.isEmpty()
+        ) {
+            return
+        }
 
-        when (val result = request()) {
+        _state.update { it.copy(isLoadingMore = true, error = null) }
+        requestJob = viewModelScope.launch {
+            loadPage(
+                query = currentState.searchQuery.trim(),
+                page = currentState.currentPage + 1,
+                replace = false,
+            )
+        }
+    }
+
+    private suspend fun loadPage(
+        query: String,
+        page: Int,
+        replace: Boolean,
+    ) {
+        _state.update {
+            if (replace) {
+                it.copy(
+                    isLoading = true,
+                    isLoadingMore = false,
+                    currentPage = 0,
+                    canLoadMore = false,
+                    error = null,
+                )
+            } else {
+                it.copy(isLoadingMore = true, error = null)
+            }
+        }
+
+        when (
+            val result = if (query.isBlank()) {
+                getCharactersUseCase(page = page, pageSize = state.value.pageSize)
+            } else {
+                searchCharactersUseCase(
+                    query = query,
+                    page = page,
+                    pageSize = state.value.pageSize,
+                )
+            }
+        ) {
             is Result.Success -> {
                 _state.update {
+                    val nextCharacters = if (replace) {
+                        result.data.characters.map { character ->
+                            character.toCharacterListItemUi()
+                        }
+                    } else {
+                        val loadedCharacters = result.data.characters.map { character ->
+                            character.toCharacterListItemUi()
+                        }
+                        (it.characters + loadedCharacters).distinctBy { character -> character.id }
+                    }
                     it.copy(
-                        characters = result.data.map(DisneyCharacter::toCharacterListItemUi),
+                        characters = nextCharacters,
                         isLoading = false,
+                        isLoadingMore = false,
+                        currentPage = result.data.currentPage,
+                        canLoadMore = result.data.hasNextPage,
                         error = null,
                     )
                 }
             }
             is Result.Failure -> {
                 _state.update {
-                    it.copy(isLoading = false, error = result.error.toUiText())
+                    it.copy(
+                        isLoading = false,
+                        isLoadingMore = false,
+                        error = result.error.toUiText(),
+                    )
                 }
             }
         }
     }
 
     companion object {
+        private const val FIRST_PAGE = 1
         private const val SEARCH_DEBOUNCE_MILLIS = 300L
     }
 }

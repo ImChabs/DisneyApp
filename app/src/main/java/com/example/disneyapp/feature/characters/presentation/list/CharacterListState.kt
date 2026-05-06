@@ -7,10 +7,18 @@ data class CharacterListState(
     val characters: List<CharacterListItemUi> = emptyList(),
     val searchQuery: String = "",
     val isLoading: Boolean = false,
+    val isLoadingMore: Boolean = false,
+    val currentPage: Int = 0,
+    val pageSize: Int = DEFAULT_PAGE_SIZE,
+    val canLoadMore: Boolean = false,
     val error: UiText? = null,
 ) {
     val isEmpty: Boolean
-        get() = !isLoading && error == null && characters.isEmpty()
+        get() = !isLoading && !isLoadingMore && error == null && characters.isEmpty()
+
+    companion object {
+        const val DEFAULT_PAGE_SIZE = 30
+    }
 }
 
 data class CharacterListItemUi(

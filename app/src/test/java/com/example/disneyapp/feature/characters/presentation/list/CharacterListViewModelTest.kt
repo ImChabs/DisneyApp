@@ -9,6 +9,7 @@ import assertk.assertions.isTrue
 import com.example.disneyapp.core.domain.DataError
 import com.example.disneyapp.core.domain.Result
 import com.example.disneyapp.core.presentation.toUiText
+import com.example.disneyapp.feature.characters.domain.model.CharacterPage
 import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
 import com.example.disneyapp.feature.characters.domain.repository.CharacterRepository
 import com.example.disneyapp.feature.characters.domain.usecase.GetCharactersUseCase
@@ -43,9 +44,9 @@ class CharacterListViewModelTest {
 
     @Test
     fun `initial load shows loading then characters`() = runTest(testDispatcher) {
-        val pendingResult = CompletableDeferred<Result<List<DisneyCharacter>, DataError.Network>>()
+        val pendingResult = CompletableDeferred<Result<CharacterPage, DataError.Network>>()
         val repository = FakeCharacterRepository(
-            getCharactersRequest = { pendingResult.await() },
+            getCharactersRequest = { _, _ -> pendingResult.await() },
         )
         val viewModel = createViewModel(repository)
 
@@ -55,10 +56,11 @@ class CharacterListViewModelTest {
             runCurrent()
             assertThat(awaitItem().isLoading).isTrue()
 
-            pendingResult.complete(Result.Success(listOf(mickey)))
+            pendingResult.complete(Result.Success(characterPage(listOf(mickey))))
             assertThat(awaitItem()).isEqualTo(
                 CharacterListState(
                     characters = listOf(mickeyListItem),
+                    currentPage = 1,
                     isLoading = false,
                 ),
             )
@@ -94,8 +96,8 @@ class CharacterListViewModelTest {
     @Test
     fun `nonblank query searches characters`() = runTest(testDispatcher) {
         val repository = FakeCharacterRepository(
-            getCharactersResult = Result.Success(listOf(mickey)),
-            searchCharactersResult = Result.Success(listOf(minnie)),
+            getCharactersResult = Result.Success(characterPage(listOf(mickey))),
+            searchCharactersResult = Result.Success(characterPage(listOf(minnie))),
         )
         val viewModel = createViewModel(repository)
         advanceUntilIdle()
@@ -108,6 +110,7 @@ class CharacterListViewModelTest {
             CharacterListState(
                 characters = listOf(minnieListItem),
                 searchQuery = "  Minnie Mouse  ",
+                currentPage = 1,
             ),
         )
     }
@@ -115,8 +118,8 @@ class CharacterListViewModelTest {
     @Test
     fun `query change updates state immediately before debounced search runs`() = runTest(testDispatcher) {
         val repository = FakeCharacterRepository(
-            getCharactersResult = Result.Success(listOf(mickey)),
-            searchCharactersResult = Result.Success(listOf(minnie)),
+            getCharactersResult = Result.Success(characterPage(listOf(mickey))),
+            searchCharactersResult = Result.Success(characterPage(listOf(minnie))),
         )
         val viewModel = createViewModel(repository)
         advanceUntilIdle()
@@ -129,6 +132,7 @@ class CharacterListViewModelTest {
             CharacterListState(
                 characters = listOf(mickeyListItem),
                 searchQuery = "Minnie",
+                currentPage = 0,
             ),
         )
     }
@@ -136,8 +140,8 @@ class CharacterListViewModelTest {
     @Test
     fun `rapid query changes search only latest debounced query`() = runTest(testDispatcher) {
         val repository = FakeCharacterRepository(
-            getCharactersResult = Result.Success(listOf(mickey)),
-            searchCharactersResult = Result.Success(listOf(minnie)),
+            getCharactersResult = Result.Success(characterPage(listOf(mickey))),
+            searchCharactersResult = Result.Success(characterPage(listOf(minnie))),
         )
         val viewModel = createViewModel(repository)
         advanceUntilIdle()
@@ -155,6 +159,7 @@ class CharacterListViewModelTest {
             CharacterListState(
                 characters = listOf(minnieListItem),
                 searchQuery = "Min",
+                currentPage = 1,
             ),
         )
     }
@@ -162,8 +167,8 @@ class CharacterListViewModelTest {
     @Test
     fun `clearing search query restores full character list`() = runTest(testDispatcher) {
         val repository = FakeCharacterRepository(
-            getCharactersResult = Result.Success(listOf(mickey)),
-            searchCharactersResult = Result.Success(listOf(minnie)),
+            getCharactersResult = Result.Success(characterPage(listOf(mickey))),
+            searchCharactersResult = Result.Success(characterPage(listOf(minnie))),
         )
         val viewModel = createViewModel(repository)
         advanceUntilIdle()
@@ -177,6 +182,7 @@ class CharacterListViewModelTest {
         assertThat(viewModel.state.value).isEqualTo(
             CharacterListState(
                 characters = listOf(mickeyListItem),
+                currentPage = 1,
             ),
         )
     }
@@ -184,7 +190,7 @@ class CharacterListViewModelTest {
     @Test
     fun `search failure preserves previous characters`() = runTest(testDispatcher) {
         val repository = FakeCharacterRepository(
-            getCharactersResult = Result.Success(listOf(mickey)),
+            getCharactersResult = Result.Success(characterPage(listOf(mickey))),
             searchCharactersResult = Result.Failure(DataError.Network.SERVER_ERROR),
         )
         val viewModel = createViewModel(repository)
@@ -197,6 +203,7 @@ class CharacterListViewModelTest {
             CharacterListState(
                 characters = listOf(mickeyListItem),
                 searchQuery = "Minnie",
+                currentPage = 0,
                 error = DataError.Network.SERVER_ERROR.toUiText(),
             ),
         )
@@ -204,15 +211,15 @@ class CharacterListViewModelTest {
 
     @Test
     fun `changing query cancels in flight search result`() = runTest(testDispatcher) {
-        val pendingSearch = CompletableDeferred<Result<List<DisneyCharacter>, DataError.Network>>()
+        val pendingSearch = CompletableDeferred<Result<CharacterPage, DataError.Network>>()
         val repository = FakeCharacterRepository(
-            getCharactersResult = Result.Success(listOf(mickey)),
-            searchCharactersResult = Result.Success(listOf(minnie)),
-            searchCharactersRequest = { query ->
+            getCharactersResult = Result.Success(characterPage(listOf(mickey))),
+            searchCharactersResult = Result.Success(characterPage(listOf(minnie))),
+            searchCharactersRequest = { query, _, _ ->
                 if (query == "Min") {
                     pendingSearch.await()
                 } else {
-                    Result.Success(emptyList())
+                    Result.Success(characterPage(emptyList()))
                 }
             },
         )
@@ -223,13 +230,14 @@ class CharacterListViewModelTest {
         advanceTimeBy(300)
         runCurrent()
         viewModel.onAction(CharacterListAction.OnSearchQueryChange("zzzzzzzz"))
-        pendingSearch.complete(Result.Success(listOf(minnie)))
+        pendingSearch.complete(Result.Success(characterPage(listOf(minnie))))
         runCurrent()
 
         assertThat(viewModel.state.value).isEqualTo(
             CharacterListState(
                 characters = listOf(mickeyListItem),
                 searchQuery = "zzzzzzzz",
+                currentPage = 0,
             ),
         )
 
@@ -240,6 +248,7 @@ class CharacterListViewModelTest {
         assertThat(viewModel.state.value).isEqualTo(
             CharacterListState(
                 searchQuery = "zzzzzzzz",
+                currentPage = 1,
             ),
         )
     }
@@ -254,7 +263,7 @@ class CharacterListViewModelTest {
 
         viewModel.onAction(CharacterListAction.OnSearchQueryChange("Minnie"))
         advanceUntilIdle()
-        repository.searchCharactersResult = Result.Success(listOf(minnie))
+        repository.searchCharactersResult = Result.Success(characterPage(listOf(minnie)))
 
         viewModel.onAction(CharacterListAction.OnRetryClick)
         advanceUntilIdle()
@@ -264,6 +273,122 @@ class CharacterListViewModelTest {
             CharacterListState(
                 characters = listOf(minnieListItem),
                 searchQuery = "Minnie",
+                currentPage = 1,
+            ),
+        )
+    }
+
+    @Test
+    fun `load more appends next page and updates pagination state`() = runTest(testDispatcher) {
+        val repository = FakeCharacterRepository(
+            getCharactersRequest = { page, pageSize ->
+                when (page) {
+                    1 -> Result.Success(
+                        characterPage(
+                            characters = listOf(mickey),
+                            currentPage = page,
+                            pageSize = pageSize,
+                            hasNextPage = true,
+                        )
+                    )
+                    else -> Result.Success(
+                        characterPage(
+                            characters = listOf(minnie),
+                            currentPage = page,
+                            pageSize = pageSize,
+                            hasNextPage = false,
+                        )
+                    )
+                }
+            },
+        )
+        val viewModel = createViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.onAction(CharacterListAction.OnLoadMore)
+        advanceUntilIdle()
+
+        assertThat(repository.requestedCharacterPages).containsExactly(1, 2)
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(
+                characters = listOf(mickeyListItem, minnieListItem),
+                currentPage = 2,
+                canLoadMore = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `load more ignores duplicate requests while already loading more`() = runTest(testDispatcher) {
+        val pendingPage = CompletableDeferred<Result<CharacterPage, DataError.Network>>()
+        val repository = FakeCharacterRepository(
+            getCharactersRequest = { page, pageSize ->
+                when (page) {
+                    1 -> Result.Success(
+                        characterPage(
+                            characters = listOf(mickey),
+                            currentPage = page,
+                            pageSize = pageSize,
+                            hasNextPage = true,
+                        )
+                    )
+                    else -> pendingPage.await()
+                }
+            },
+        )
+        val viewModel = createViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.onAction(CharacterListAction.OnLoadMore)
+        viewModel.onAction(CharacterListAction.OnLoadMore)
+        runCurrent()
+
+        assertThat(repository.requestedCharacterPages).containsExactly(1, 2)
+        assertThat(viewModel.state.value.isLoadingMore).isTrue()
+
+        pendingPage.complete(
+            Result.Success(
+                characterPage(
+                    characters = listOf(minnie),
+                    currentPage = 2,
+                    hasNextPage = false,
+                )
+            )
+        )
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value.characters).containsExactly(mickeyListItem, minnieListItem)
+    }
+
+    @Test
+    fun `load more failure preserves existing characters`() = runTest(testDispatcher) {
+        val repository = FakeCharacterRepository(
+            getCharactersRequest = { page, pageSize ->
+                when (page) {
+                    1 -> Result.Success(
+                        characterPage(
+                            characters = listOf(mickey),
+                            currentPage = page,
+                            pageSize = pageSize,
+                            hasNextPage = true,
+                        )
+                    )
+                    else -> Result.Failure(DataError.Network.SERVER_ERROR)
+                }
+            },
+        )
+        val viewModel = createViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.onAction(CharacterListAction.OnLoadMore)
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(
+                characters = listOf(mickeyListItem),
+                currentPage = 1,
+                canLoadMore = true,
+                error = DataError.Network.SERVER_ERROR.toUiText(),
             ),
         )
     }
@@ -278,25 +403,30 @@ class CharacterListViewModelTest {
 }
 
 private class FakeCharacterRepository(
-    var getCharactersResult: Result<List<DisneyCharacter>, DataError.Network> =
-        Result.Success(emptyList()),
+    var getCharactersResult: Result<CharacterPage, DataError.Network> =
+        Result.Success(characterPage(emptyList())),
     private val getCharacterResult: Result<DisneyCharacter, DataError.Network> =
         Result.Failure(DataError.Network.UNKNOWN),
-    var searchCharactersResult: Result<List<DisneyCharacter>, DataError.Network> =
-        Result.Success(emptyList()),
-    var getCharactersRequest: suspend () -> Result<List<DisneyCharacter>, DataError.Network> = {
+    var searchCharactersResult: Result<CharacterPage, DataError.Network> =
+        Result.Success(characterPage(emptyList())),
+    var getCharactersRequest: suspend (Int, Int) -> Result<CharacterPage, DataError.Network> = { _, _ ->
         getCharactersResult
     },
-    var searchCharactersRequest: (suspend (String) -> Result<List<DisneyCharacter>, DataError.Network>)? = null,
+    var searchCharactersRequest: (suspend (String, Int, Int) -> Result<CharacterPage, DataError.Network>)? = null,
 ) : CharacterRepository {
     var getCharactersCallCount = 0
         private set
 
+    val requestedCharacterPages = mutableListOf<Int>()
     val requestedSearchQueries = mutableListOf<String>()
 
-    override suspend fun getCharacters(): Result<List<DisneyCharacter>, DataError.Network> {
+    override suspend fun getCharacters(
+        page: Int,
+        pageSize: Int,
+    ): Result<CharacterPage, DataError.Network> {
         getCharactersCallCount++
-        return getCharactersRequest()
+        requestedCharacterPages.add(page)
+        return getCharactersRequest(page, pageSize)
     }
 
     override suspend fun getCharacter(id: Int): Result<DisneyCharacter, DataError.Network> =
@@ -304,11 +434,27 @@ private class FakeCharacterRepository(
 
     override suspend fun searchCharacters(
         name: String,
-    ): Result<List<DisneyCharacter>, DataError.Network> {
+        page: Int,
+        pageSize: Int,
+    ): Result<CharacterPage, DataError.Network> {
         requestedSearchQueries.add(name)
-        return searchCharactersRequest?.invoke(name) ?: searchCharactersResult
+        return searchCharactersRequest?.invoke(name, page, pageSize) ?: searchCharactersResult
     }
 }
+
+private fun characterPage(
+    characters: List<DisneyCharacter>,
+    currentPage: Int = 1,
+    pageSize: Int = CharacterListState.DEFAULT_PAGE_SIZE,
+    hasNextPage: Boolean = false,
+): CharacterPage =
+    CharacterPage(
+        characters = characters,
+        currentPage = currentPage,
+        pageSize = pageSize,
+        totalPages = currentPage,
+        hasNextPage = hasNextPage,
+    )
 
 private val mickey = DisneyCharacter(
     id = 4703,

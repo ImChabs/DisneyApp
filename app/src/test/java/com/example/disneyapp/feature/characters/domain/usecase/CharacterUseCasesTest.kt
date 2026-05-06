@@ -6,6 +6,7 @@ import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import com.example.disneyapp.core.domain.DataError
 import com.example.disneyapp.core.domain.Result
+import com.example.disneyapp.feature.characters.domain.model.CharacterPage
 import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
 import com.example.disneyapp.feature.characters.domain.repository.CharacterRepository
 import kotlinx.coroutines.test.runTest
@@ -16,14 +17,16 @@ class CharacterUseCasesTest {
     fun `get characters returns repository result`() = runTest {
         val characters = listOf(mickey)
         val repository = FakeCharacterRepository(
-            getCharactersResult = Result.Success(characters),
+            getCharactersResult = Result.Success(characterPage(characters)),
         )
         val useCase = GetCharactersUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(page = 2, pageSize = 25)
 
-        assertThat(result).isEqualTo(Result.Success(characters))
+        assertThat(result).isEqualTo(Result.Success(characterPage(characters)))
         assertThat(repository.getCharactersCalled).isTrue()
+        assertThat(repository.requestedPage).isEqualTo(2)
+        assertThat(repository.requestedPageSize).isEqualTo(25)
     }
 
     @Test
@@ -43,14 +46,16 @@ class CharacterUseCasesTest {
     fun `search characters trims query before searching`() = runTest {
         val characters = listOf(mickey)
         val repository = FakeCharacterRepository(
-            searchCharactersResult = Result.Success(characters),
+            searchCharactersResult = Result.Success(characterPage(characters)),
         )
         val useCase = SearchCharactersUseCase(repository)
 
-        val result = useCase("  Mickey Mouse  ")
+        val result = useCase("  Mickey Mouse  ", page = 3, pageSize = 10)
 
-        assertThat(result).isEqualTo(Result.Success(characters))
+        assertThat(result).isEqualTo(Result.Success(characterPage(characters)))
         assertThat(repository.requestedSearchQuery).isEqualTo("Mickey Mouse")
+        assertThat(repository.requestedPage).isEqualTo(3)
+        assertThat(repository.requestedPageSize).isEqualTo(10)
     }
 
     @Test
@@ -58,9 +63,19 @@ class CharacterUseCasesTest {
         val repository = FakeCharacterRepository()
         val useCase = SearchCharactersUseCase(repository)
 
-        val result = useCase("   ")
+        val result = useCase("   ", page = 1, pageSize = 30)
 
-        assertThat(result).isEqualTo(Result.Success(emptyList()))
+        assertThat(result).isEqualTo(
+            Result.Success(
+                CharacterPage(
+                    characters = emptyList(),
+                    currentPage = 1,
+                    pageSize = 30,
+                    totalPages = 0,
+                    hasNextPage = false,
+                )
+            )
+        )
         assertThat(repository.searchCharactersCalled).isFalse()
     }
 
@@ -72,19 +87,19 @@ class CharacterUseCasesTest {
         )
         val useCase = SearchCharactersUseCase(repository)
 
-        val result = useCase("Mickey")
+        val result = useCase("Mickey", page = 1, pageSize = 30)
 
         assertThat(result).isEqualTo(failure)
     }
 }
 
 private class FakeCharacterRepository(
-    private val getCharactersResult: Result<List<DisneyCharacter>, DataError.Network> =
-        Result.Success(emptyList()),
+    private val getCharactersResult: Result<CharacterPage, DataError.Network> =
+        Result.Success(characterPage(emptyList())),
     private val getCharacterResult: Result<DisneyCharacter, DataError.Network> =
         Result.Failure(DataError.Network.UNKNOWN),
-    private val searchCharactersResult: Result<List<DisneyCharacter>, DataError.Network> =
-        Result.Success(emptyList()),
+    private val searchCharactersResult: Result<CharacterPage, DataError.Network> =
+        Result.Success(characterPage(emptyList())),
 ) : CharacterRepository {
     var getCharactersCalled = false
         private set
@@ -98,8 +113,19 @@ private class FakeCharacterRepository(
     var requestedSearchQuery: String? = null
         private set
 
-    override suspend fun getCharacters(): Result<List<DisneyCharacter>, DataError.Network> {
+    var requestedPage: Int? = null
+        private set
+
+    var requestedPageSize: Int? = null
+        private set
+
+    override suspend fun getCharacters(
+        page: Int,
+        pageSize: Int,
+    ): Result<CharacterPage, DataError.Network> {
         getCharactersCalled = true
+        requestedPage = page
+        requestedPageSize = pageSize
         return getCharactersResult
     }
 
@@ -110,12 +136,30 @@ private class FakeCharacterRepository(
 
     override suspend fun searchCharacters(
         name: String,
-    ): Result<List<DisneyCharacter>, DataError.Network> {
+        page: Int,
+        pageSize: Int,
+    ): Result<CharacterPage, DataError.Network> {
         searchCharactersCalled = true
         requestedSearchQuery = name
+        requestedPage = page
+        requestedPageSize = pageSize
         return searchCharactersResult
     }
 }
+
+private fun characterPage(
+    characters: List<DisneyCharacter>,
+    currentPage: Int = 1,
+    pageSize: Int = 30,
+    hasNextPage: Boolean = false,
+): CharacterPage =
+    CharacterPage(
+        characters = characters,
+        currentPage = currentPage,
+        pageSize = pageSize,
+        totalPages = currentPage,
+        hasNextPage = hasNextPage,
+    )
 
 private val mickey = DisneyCharacter(
     id = 4703,
