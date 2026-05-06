@@ -8,6 +8,7 @@ import com.example.disneyapp.feature.characters.domain.repository.CharacterRepos
 import com.example.disneyapp.feature.characters.domain.usecase.GetCharacterDetailUseCase
 import com.example.disneyapp.feature.characters.domain.usecase.GetCharactersUseCase
 import com.example.disneyapp.feature.characters.domain.usecase.SearchCharactersUseCase
+import com.example.disneyapp.feature.characters.presentation.detail.CharacterDetailViewModel
 import com.example.disneyapp.feature.characters.presentation.list.CharacterListViewModel
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
@@ -32,4 +33,5 @@ val charactersDomainModule = module {
 
 val charactersPresentationModule = module {
     viewModelOf(::CharacterListViewModel)
+    viewModelOf(::CharacterDetailViewModel)
 }
