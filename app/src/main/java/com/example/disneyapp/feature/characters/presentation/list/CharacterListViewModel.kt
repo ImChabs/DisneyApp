@@ -3,6 +3,7 @@ package com.example.disneyapp.feature.characters.presentation.list
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.disneyapp.core.domain.Result
+import com.example.disneyapp.core.presentation.UiText
 import com.example.disneyapp.core.presentation.toUiText
 import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
 import com.example.disneyapp.feature.characters.domain.usecase.GetCharactersUseCase
@@ -27,7 +28,7 @@ class CharacterListViewModel(
     private val _state = MutableStateFlow(CharacterListState())
     val state = _state.asStateFlow()
 
-    private val _events = Channel<CharacterListEvent>()
+    private val _events = Channel<CharacterListEvent>(Channel.BUFFERED)
     val events = _events.receiveAsFlow()
 
     private var searchDebounceJob: Job? = null
@@ -160,6 +161,9 @@ class CharacterListViewModel(
             }
         ) {
             is Result.Success -> {
+                if (result.data.isFromCache) {
+                    _events.send(CharacterListEvent.ShowSnackbar(CACHE_MESSAGE))
+                }
                 _state.update {
                     result.data.characters.forEach { character ->
                         loadedCharacters[character.id] = character
@@ -215,5 +219,6 @@ class CharacterListViewModel(
     companion object {
         private const val FIRST_PAGE = 1
         private const val SEARCH_DEBOUNCE_MILLIS = 300L
+        private val CACHE_MESSAGE = UiText.DynamicString("Showing saved characters.")
     }
 }

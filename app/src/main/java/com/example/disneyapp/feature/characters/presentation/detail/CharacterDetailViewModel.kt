@@ -3,6 +3,7 @@ package com.example.disneyapp.feature.characters.presentation.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.disneyapp.core.domain.Result
+import com.example.disneyapp.core.presentation.UiText
 import com.example.disneyapp.core.presentation.toUiText
 import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
 import com.example.disneyapp.feature.characters.domain.usecase.GetCharacterDetailUseCase
@@ -24,7 +25,7 @@ class CharacterDetailViewModel(
     private val _state = MutableStateFlow(CharacterDetailState())
     val state = _state.asStateFlow()
 
-    private val _events = Channel<CharacterDetailEvent>()
+    private val _events = Channel<CharacterDetailEvent>(Channel.BUFFERED)
     val events = _events.receiveAsFlow()
 
     private var character: DisneyCharacter? = null
@@ -61,10 +62,14 @@ class CharacterDetailViewModel(
 
             when (val result = getCharacterDetailUseCase(characterId)) {
                 is Result.Success -> {
-                    character = result.data
+                    val detail = result.data
+                    character = detail.character
+                    if (detail.isFromCache) {
+                        _events.send(CharacterDetailEvent.ShowSnackbar(CACHE_MESSAGE))
+                    }
                     _state.update {
                         it.copy(
-                            character = result.data.toCharacterDetailUi(isFavorite = isFavorite),
+                            character = detail.character.toCharacterDetailUi(isFavorite = isFavorite),
                             isLoading = false,
                             error = null,
                         )
@@ -92,5 +97,9 @@ class CharacterDetailViewModel(
                 )
             }
         }
+    }
+
+    companion object {
+        private val CACHE_MESSAGE = UiText.DynamicString("Showing saved character.")
     }
 }

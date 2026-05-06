@@ -11,6 +11,6 @@ class GetCharactersUseCase(
     suspend operator fun invoke(
         page: Int,
         pageSize: Int,
-    ): Result<CharacterPage, DataError.Network> =
+    ): Result<CharacterPage, DataError> =
         repository.getCharacters(page = page, pageSize = pageSize)
 }

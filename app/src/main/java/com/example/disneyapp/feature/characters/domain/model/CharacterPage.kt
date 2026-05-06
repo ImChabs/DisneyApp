@@ -6,4 +6,5 @@ data class CharacterPage(
     val pageSize: Int,
     val totalPages: Int?,
     val hasNextPage: Boolean,
+    val isFromCache: Boolean = false,
 )

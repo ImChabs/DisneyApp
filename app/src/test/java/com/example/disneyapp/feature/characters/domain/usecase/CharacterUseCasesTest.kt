@@ -6,6 +6,7 @@ import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import com.example.disneyapp.core.domain.DataError
 import com.example.disneyapp.core.domain.Result
+import com.example.disneyapp.feature.characters.domain.model.CharacterDetail
 import com.example.disneyapp.feature.characters.domain.model.CharacterPage
 import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
 import com.example.disneyapp.feature.characters.domain.repository.CharacterRepository
@@ -31,14 +32,15 @@ class CharacterUseCasesTest {
 
     @Test
     fun `get character detail returns repository result`() = runTest {
+        val detail = CharacterDetail(mickey)
         val repository = FakeCharacterRepository(
-            getCharacterResult = Result.Success(mickey),
+            getCharacterResult = Result.Success(detail),
         )
         val useCase = GetCharacterDetailUseCase(repository)
 
         val result = useCase(id = 4703)
 
-        assertThat(result).isEqualTo(Result.Success(mickey))
+        assertThat(result).isEqualTo(Result.Success(detail))
         assertThat(repository.requestedCharacterId).isEqualTo(4703)
     }
 
@@ -96,7 +98,7 @@ class CharacterUseCasesTest {
 private class FakeCharacterRepository(
     private val getCharactersResult: Result<CharacterPage, DataError.Network> =
         Result.Success(characterPage(emptyList())),
-    private val getCharacterResult: Result<DisneyCharacter, DataError.Network> =
+    private val getCharacterResult: Result<CharacterDetail, DataError> =
         Result.Failure(DataError.Network.UNKNOWN),
     private val searchCharactersResult: Result<CharacterPage, DataError.Network> =
         Result.Success(characterPage(emptyList())),
@@ -129,7 +131,7 @@ private class FakeCharacterRepository(
         return getCharactersResult
     }
 
-    override suspend fun getCharacter(id: Int): Result<DisneyCharacter, DataError.Network> {
+    override suspend fun getCharacter(id: Int): Result<CharacterDetail, DataError> {
         requestedCharacterId = id
         return getCharacterResult
     }
