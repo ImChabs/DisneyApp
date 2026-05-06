@@ -7,17 +7,26 @@ import com.example.disneyapp.core.domain.map
 import com.example.disneyapp.feature.characters.data.mapper.toDisneyCharacter
 import com.example.disneyapp.feature.characters.data.remote.dto.CharacterDetailResponseDto
 import com.example.disneyapp.feature.characters.data.remote.dto.CharacterListResponseDto
+import com.example.disneyapp.feature.characters.domain.model.CharacterPage
 import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
 import io.ktor.client.HttpClient
 
 class KtorCharacterRemoteDataSource(
     private val httpClient: HttpClient,
 ) : CharacterRemoteDataSource {
-    override suspend fun getCharacters(): Result<List<DisneyCharacter>, DataError.Network> =
-        httpClient.safeGet<CharacterListResponseDto>(route = "/character")
-            .map { response ->
-                response.data.orEmpty().map { it.toDisneyCharacter() }
-            }
+    override suspend fun getCharacters(
+        page: Int,
+        pageSize: Int,
+    ): Result<CharacterPage, DataError.Network> =
+        httpClient.safeGet<CharacterListResponseDto>(
+            route = "/character",
+            queryParameters = mapOf(
+                "page" to page,
+                "pageSize" to pageSize,
+            ),
+        ).map { response ->
+            response.toCharacterPage(page = page, pageSize = pageSize)
+        }
 
     override suspend fun getCharacter(id: Int): Result<DisneyCharacter, DataError.Network> =
         when (
@@ -36,11 +45,33 @@ class KtorCharacterRemoteDataSource(
 
     override suspend fun searchCharacters(
         name: String,
-    ): Result<List<DisneyCharacter>, DataError.Network> =
+        page: Int,
+        pageSize: Int,
+    ): Result<CharacterPage, DataError.Network> =
         httpClient.safeGet<CharacterListResponseDto>(
             route = "/character",
-            queryParameters = mapOf("name" to name),
+            queryParameters = mapOf(
+                "name" to name,
+                "page" to page,
+                "pageSize" to pageSize,
+            ),
         ).map { response ->
-            response.data.orEmpty().map { it.toDisneyCharacter() }
+            response.toCharacterPage(page = page, pageSize = pageSize)
         }
+}
+
+private fun CharacterListResponseDto.toCharacterPage(
+    page: Int,
+    pageSize: Int,
+): CharacterPage {
+    val totalPages = info?.totalPages
+    val hasNextPage = !info?.nextPage.isNullOrBlank() || (totalPages != null && page < totalPages)
+
+    return CharacterPage(
+        characters = data.orEmpty().map { it.toDisneyCharacter() },
+        currentPage = page,
+        pageSize = pageSize,
+        totalPages = totalPages,
+        hasNextPage = hasNextPage,
+    )
 }

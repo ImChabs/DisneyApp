@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +30,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
@@ -39,7 +42,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +64,7 @@ import coil3.compose.AsyncImage
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
 import com.example.disneyapp.ui.theme.DisneyAppTheme
+import kotlinx.coroutines.flow.distinctUntilChanged
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -107,6 +113,7 @@ fun CharacterListScreen(
                 state = state,
                 errorMessage = state.error?.asString(LocalContext.current),
                 onRetryClick = { onAction(CharacterListAction.OnRetryClick) },
+                onLoadMore = { onAction(CharacterListAction.OnLoadMore) },
                 onSearchQueryChange = { onAction(CharacterListAction.OnSearchQueryChange(it)) },
                 onCharacterClick = onCharacterClick,
                 modifier = Modifier
@@ -298,18 +305,47 @@ private fun CharacterCatalogContent(
     state: CharacterListState,
     errorMessage: String?,
     onRetryClick: () -> Unit,
+    onLoadMore: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onCharacterClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val gridState = rememberLazyGridState()
+
+    LaunchedEffect(
+        gridState,
+        state.canLoadMore,
+        state.isLoading,
+        state.isLoadingMore,
+        state.characters.size,
+    ) {
+        snapshotFlow {
+            val layoutInfo = gridState.layoutInfo
+            val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: return@snapshotFlow false
+
+            state.canLoadMore &&
+                !state.isLoading &&
+                !state.isLoadingMore &&
+                layoutInfo.totalItemsCount > 0 &&
+                lastVisibleIndex >= layoutInfo.totalItemsCount - LOAD_MORE_ITEM_THRESHOLD
+        }
+            .distinctUntilChanged()
+            .collect { shouldLoadMore ->
+                if (shouldLoadMore) {
+                    onLoadMore()
+                }
+            }
+    }
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
+        state = gridState,
         modifier = modifier,
         contentPadding = PaddingValues(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 28.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+        item(span = { GridItemSpan(maxLineSpan) }) {
             CharacterCatalogHeader(
                 searchQuery = state.searchQuery,
                 isLoading = state.isLoading,
@@ -319,7 +355,7 @@ private fun CharacterCatalogContent(
 
         when {
             errorMessage != null -> {
-                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
                     CharacterListErrorState(
                         message = errorMessage,
                         onRetryClick = onRetryClick,
@@ -328,7 +364,7 @@ private fun CharacterCatalogContent(
             }
 
             state.isEmpty -> {
-                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
                     CharacterListEmptyState(searchQuery = state.searchQuery)
                 }
             }
@@ -336,7 +372,7 @@ private fun CharacterCatalogContent(
             state.isLoading && state.characters.isEmpty() -> {
                 items(
                     count = 3,
-                    span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) },
+                    span = { GridItemSpan(maxLineSpan) },
                 ) {
                     LoadingCharacterRow()
                 }
@@ -351,6 +387,12 @@ private fun CharacterCatalogContent(
                 character = character,
                 onClick = { onCharacterClick(character.id) },
             )
+        }
+
+        if (state.isLoadingMore) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                LoadMoreIndicator()
+            }
         }
     }
 }
@@ -636,6 +678,21 @@ private fun CharacterMetadataBadge(
 }
 
 @Composable
+private fun LoadMoreIndicator(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(28.dp),
+            strokeWidth = 2.dp,
+        )
+    }
+}
+
+@Composable
 private fun LoadingCharacterRow(modifier: Modifier = Modifier) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -736,6 +793,8 @@ private fun StatePanel(
         }
     }
 }
+
+private const val LOAD_MORE_ITEM_THRESHOLD = 6
 
 @Preview(showBackground = true)
 @Composable

@@ -2,19 +2,35 @@ package com.example.disneyapp.feature.characters.domain.usecase
 
 import com.example.disneyapp.core.domain.DataError
 import com.example.disneyapp.core.domain.Result
-import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
+import com.example.disneyapp.feature.characters.domain.model.CharacterPage
 import com.example.disneyapp.feature.characters.domain.repository.CharacterRepository
 
 class SearchCharactersUseCase(
     private val repository: CharacterRepository,
 ) {
-    suspend operator fun invoke(query: String): Result<List<DisneyCharacter>, DataError.Network> {
+    suspend operator fun invoke(
+        query: String,
+        page: Int,
+        pageSize: Int,
+    ): Result<CharacterPage, DataError.Network> {
         val trimmedQuery = query.trim()
 
         if (trimmedQuery.isBlank()) {
-            return Result.Success(emptyList())
+            return Result.Success(
+                CharacterPage(
+                    characters = emptyList(),
+                    currentPage = page,
+                    pageSize = pageSize,
+                    totalPages = 0,
+                    hasNextPage = false,
+                )
+            )
         }
 
-        return repository.searchCharacters(trimmedQuery)
+        return repository.searchCharacters(
+            name = trimmedQuery,
+            page = page,
+            pageSize = pageSize,
+        )
     }
 }
