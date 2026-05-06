@@ -17,6 +17,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -112,6 +113,53 @@ class CharacterListViewModelTest {
     }
 
     @Test
+    fun `query change updates state immediately before debounced search runs`() = runTest(testDispatcher) {
+        val repository = FakeCharacterRepository(
+            getCharactersResult = Result.Success(listOf(mickey)),
+            searchCharactersResult = Result.Success(listOf(minnie)),
+        )
+        val viewModel = createViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.onAction(CharacterListAction.OnSearchQueryChange("Minnie"))
+        runCurrent()
+
+        assertThat(repository.requestedSearchQueries).containsExactly()
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(
+                characters = listOf(mickeyListItem),
+                searchQuery = "Minnie",
+            ),
+        )
+    }
+
+    @Test
+    fun `rapid query changes search only latest debounced query`() = runTest(testDispatcher) {
+        val repository = FakeCharacterRepository(
+            getCharactersResult = Result.Success(listOf(mickey)),
+            searchCharactersResult = Result.Success(listOf(minnie)),
+        )
+        val viewModel = createViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.onAction(CharacterListAction.OnSearchQueryChange("M"))
+        advanceTimeBy(100)
+        viewModel.onAction(CharacterListAction.OnSearchQueryChange("Mi"))
+        advanceTimeBy(100)
+        viewModel.onAction(CharacterListAction.OnSearchQueryChange("Min"))
+        advanceTimeBy(300)
+        advanceUntilIdle()
+
+        assertThat(repository.requestedSearchQueries).containsExactly("Min")
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(
+                characters = listOf(minnieListItem),
+                searchQuery = "Min",
+            ),
+        )
+    }
+
+    @Test
     fun `clearing search query restores full character list`() = runTest(testDispatcher) {
         val repository = FakeCharacterRepository(
             getCharactersResult = Result.Success(listOf(mickey)),
@@ -129,6 +177,69 @@ class CharacterListViewModelTest {
         assertThat(viewModel.state.value).isEqualTo(
             CharacterListState(
                 characters = listOf(mickeyListItem),
+            ),
+        )
+    }
+
+    @Test
+    fun `search failure preserves previous characters`() = runTest(testDispatcher) {
+        val repository = FakeCharacterRepository(
+            getCharactersResult = Result.Success(listOf(mickey)),
+            searchCharactersResult = Result.Failure(DataError.Network.SERVER_ERROR),
+        )
+        val viewModel = createViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.onAction(CharacterListAction.OnSearchQueryChange("Minnie"))
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(
+                characters = listOf(mickeyListItem),
+                searchQuery = "Minnie",
+                error = DataError.Network.SERVER_ERROR.toUiText(),
+            ),
+        )
+    }
+
+    @Test
+    fun `changing query cancels in flight search result`() = runTest(testDispatcher) {
+        val pendingSearch = CompletableDeferred<Result<List<DisneyCharacter>, DataError.Network>>()
+        val repository = FakeCharacterRepository(
+            getCharactersResult = Result.Success(listOf(mickey)),
+            searchCharactersResult = Result.Success(listOf(minnie)),
+            searchCharactersRequest = { query ->
+                if (query == "Min") {
+                    pendingSearch.await()
+                } else {
+                    Result.Success(emptyList())
+                }
+            },
+        )
+        val viewModel = createViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.onAction(CharacterListAction.OnSearchQueryChange("Min"))
+        advanceTimeBy(300)
+        runCurrent()
+        viewModel.onAction(CharacterListAction.OnSearchQueryChange("zzzzzzzz"))
+        pendingSearch.complete(Result.Success(listOf(minnie)))
+        runCurrent()
+
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(
+                characters = listOf(mickeyListItem),
+                searchQuery = "zzzzzzzz",
+            ),
+        )
+
+        advanceTimeBy(300)
+        advanceUntilIdle()
+
+        assertThat(repository.requestedSearchQueries).containsExactly("Min", "zzzzzzzz")
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(
+                searchQuery = "zzzzzzzz",
             ),
         )
     }
@@ -176,6 +287,7 @@ private class FakeCharacterRepository(
     var getCharactersRequest: suspend () -> Result<List<DisneyCharacter>, DataError.Network> = {
         getCharactersResult
     },
+    var searchCharactersRequest: (suspend (String) -> Result<List<DisneyCharacter>, DataError.Network>)? = null,
 ) : CharacterRepository {
     var getCharactersCallCount = 0
         private set
@@ -194,7 +306,7 @@ private class FakeCharacterRepository(
         name: String,
     ): Result<List<DisneyCharacter>, DataError.Network> {
         requestedSearchQueries.add(name)
-        return searchCharactersResult
+        return searchCharactersRequest?.invoke(name) ?: searchCharactersResult
     }
 }
 

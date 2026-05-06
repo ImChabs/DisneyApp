@@ -22,12 +22,12 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -37,7 +37,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
@@ -63,7 +63,7 @@ fun CharacterListRoot(
     onCharacterClick: (Int) -> Unit = {},
     viewModel: CharacterListViewModel = koinViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     CharacterListScreen(
         state = state,
@@ -98,53 +98,28 @@ fun CharacterListScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { contentPadding ->
-        when {
-            state.error != null -> CharacterListErrorState(
-                message = state.error.asString(LocalContext.current),
-                searchQuery = state.searchQuery,
-                onRetryClick = { onAction(CharacterListAction.OnRetryClick) },
-                onSearchQueryChange = { onAction(CharacterListAction.OnSearchQueryChange(it)) },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding),
-            )
-
-            state.isEmpty -> CharacterListEmptyState(
-                searchQuery = state.searchQuery,
-                onSearchQueryChange = { onAction(CharacterListAction.OnSearchQueryChange(it)) },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding),
-            )
-
-            else -> CharacterCatalogContent(
-                state = state,
-                onSearchQueryChange = { onAction(CharacterListAction.OnSearchQueryChange(it)) },
-                onCharacterClick = onCharacterClick,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding),
-            )
-        }
+        CharacterCatalogContent(
+            state = state,
+            errorMessage = state.error?.asString(LocalContext.current),
+            onRetryClick = { onAction(CharacterListAction.OnRetryClick) },
+            onSearchQueryChange = { onAction(CharacterListAction.OnSearchQueryChange(it)) },
+            onCharacterClick = onCharacterClick,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPadding),
+        )
     }
 }
 
 @Composable
 private fun CharacterCatalogContent(
     state: CharacterListState,
+    errorMessage: String?,
+    onRetryClick: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onCharacterClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (state.isLoading && state.characters.isEmpty()) {
-        CharacterListLoadingState(
-            searchQuery = state.searchQuery,
-            onSearchQueryChange = onSearchQueryChange,
-            modifier = modifier,
-        )
-        return
-    }
-
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         modifier = modifier,
@@ -155,8 +130,35 @@ private fun CharacterCatalogContent(
         item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
             CharacterCatalogHeader(
                 searchQuery = state.searchQuery,
+                isLoading = state.isLoading,
                 onSearchQueryChange = onSearchQueryChange,
             )
+        }
+
+        when {
+            errorMessage != null -> {
+                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                    CharacterListErrorState(
+                        message = errorMessage,
+                        onRetryClick = onRetryClick,
+                    )
+                }
+            }
+
+            state.isEmpty -> {
+                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                    CharacterListEmptyState(searchQuery = state.searchQuery)
+                }
+            }
+
+            state.isLoading && state.characters.isEmpty() -> {
+                items(
+                    count = 3,
+                    span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) },
+                ) {
+                    LoadingCharacterRow()
+                }
+            }
         }
 
         items(
@@ -174,6 +176,7 @@ private fun CharacterCatalogContent(
 @Composable
 private fun CharacterCatalogHeader(
     searchQuery: String,
+    isLoading: Boolean,
     onSearchQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -186,6 +189,11 @@ private fun CharacterCatalogHeader(
             query = searchQuery,
             onQueryChange = onSearchQueryChange,
         )
+        Box(modifier = Modifier.height(4.dp)) {
+            if (isLoading) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+        }
         CharacterFilterChips()
         Spacer(modifier = Modifier.height(2.dp))
     }
@@ -440,35 +448,12 @@ private fun CharacterMetadataBadge(
 }
 
 @Composable
-private fun CharacterListLoadingState(
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        CharacterCatalogHeader(
-            searchQuery = searchQuery,
-            onSearchQueryChange = onSearchQueryChange,
-        )
-
-        repeat(3) {
-            LoadingCharacterRow()
-        }
-    }
-}
-
-@Composable
 private fun LoadingCharacterRow(modifier: Modifier = Modifier) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        repeat(2) {
+        repeat(3) {
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -483,74 +468,40 @@ private fun LoadingCharacterRow(modifier: Modifier = Modifier) {
 @Composable
 private fun CharacterListErrorState(
     message: String,
-    searchQuery: String,
     onRetryClick: () -> Unit,
-    onSearchQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    CharacterStateScaffold(
-        searchQuery = searchQuery,
-        onSearchQueryChange = onSearchQueryChange,
+    StatePanel(
+        title = stringResource(R.string.characters_error_title),
+        message = message,
+        action = {
+            Button(onClick = onRetryClick) {
+                Text(text = stringResource(R.string.characters_retry))
+            }
+        },
         modifier = modifier,
-    ) {
-        StatePanel(
-            title = stringResource(R.string.characters_error_title),
-            message = message,
-            action = {
-                Button(onClick = onRetryClick) {
-                    Text(text = stringResource(R.string.characters_retry))
-                }
-            },
-        )
-    }
+    )
 }
 
 @Composable
 private fun CharacterListEmptyState(
     searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val hasSearch = searchQuery.isNotBlank()
-    CharacterStateScaffold(
-        searchQuery = searchQuery,
-        onSearchQueryChange = onSearchQueryChange,
+    StatePanel(
+        title = if (hasSearch) {
+            stringResource(R.string.characters_empty_search_title)
+        } else {
+            stringResource(R.string.characters_empty_title)
+        },
+        message = if (hasSearch) {
+            stringResource(R.string.characters_empty_search_message)
+        } else {
+            stringResource(R.string.characters_empty_message)
+        },
         modifier = modifier,
-    ) {
-        StatePanel(
-            title = if (hasSearch) {
-                stringResource(R.string.characters_empty_search_title)
-            } else {
-                stringResource(R.string.characters_empty_title)
-            },
-            message = if (hasSearch) {
-                stringResource(R.string.characters_empty_search_message)
-            } else {
-                stringResource(R.string.characters_empty_message)
-            },
-        )
-    }
-}
-
-@Composable
-private fun CharacterStateScaffold(
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    Column(
-        modifier = modifier
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
-    ) {
-        CharacterCatalogHeader(
-            searchQuery = searchQuery,
-            onSearchQueryChange = onSearchQueryChange,
-        )
-        content()
-    }
+    )
 }
 
 @Composable
