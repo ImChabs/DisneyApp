@@ -8,6 +8,8 @@ import com.example.disneyapp.core.presentation.toUiText
 import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
 import com.example.disneyapp.feature.characters.domain.usecase.GetCharactersUseCase
 import com.example.disneyapp.feature.characters.domain.usecase.SearchCharactersUseCase
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -20,8 +22,12 @@ class CharacterListViewModel(
     private val _state = MutableStateFlow(CharacterListState())
     val state = _state.asStateFlow()
 
+    private var searchDebounceJob: Job? = null
+    private var requestJob: Job? = null
+    private var lastSubmittedQuery: String? = null
+
     init {
-        loadCharacters()
+        submitQuery(query = "", force = true)
     }
 
     fun onAction(action: CharacterListAction) {
@@ -32,37 +38,43 @@ class CharacterListViewModel(
     }
 
     private fun onSearchQueryChange(query: String) {
-        _state.update { it.copy(searchQuery = query) }
+        requestJob?.cancel()
+        _state.update {
+            it.copy(
+                searchQuery = query,
+                isLoading = false,
+                error = null,
+            )
+        }
 
-        if (query.isBlank()) {
-            loadCharacters()
-        } else {
-            searchCharacters(query)
+        searchDebounceJob?.cancel()
+        searchDebounceJob = viewModelScope.launch {
+            delay(SEARCH_DEBOUNCE_MILLIS)
+            submitQuery(query = state.value.searchQuery)
         }
     }
 
     private fun retry() {
-        val query = state.value.searchQuery
-
-        if (query.isBlank()) {
-            loadCharacters()
-        } else {
-            searchCharacters(query)
-        }
+        searchDebounceJob?.cancel()
+        submitQuery(query = state.value.searchQuery, force = true)
     }
 
-    private fun loadCharacters() {
-        viewModelScope.launch {
-            handleCharactersResult {
-                getCharactersUseCase()
-            }
-        }
-    }
+    private fun submitQuery(
+        query: String,
+        force: Boolean = false,
+    ) {
+        val trimmedQuery = query.trim()
+        if (!force && trimmedQuery == lastSubmittedQuery) return
 
-    private fun searchCharacters(query: String) {
-        viewModelScope.launch {
+        lastSubmittedQuery = trimmedQuery
+        requestJob?.cancel()
+        requestJob = viewModelScope.launch {
             handleCharactersResult {
-                searchCharactersUseCase(query)
+                if (trimmedQuery.isBlank()) {
+                    getCharactersUseCase()
+                } else {
+                    searchCharactersUseCase(trimmedQuery)
+                }
             }
         }
     }
@@ -84,13 +96,13 @@ class CharacterListViewModel(
             }
             is Result.Failure -> {
                 _state.update {
-                    it.copy(
-                        characters = emptyList(),
-                        isLoading = false,
-                        error = result.error.toUiText(),
-                    )
+                    it.copy(isLoading = false, error = result.error.toUiText())
                 }
             }
         }
+    }
+
+    companion object {
+        private const val SEARCH_DEBOUNCE_MILLIS = 300L
     }
 }
