@@ -15,19 +15,58 @@ import org.junit.jupiter.api.Test
 
 class CharacterUseCasesTest {
     @Test
-    fun `get characters returns repository result`() = runTest {
-        val characters = listOf(mickey)
+    fun `get characters returns filtered repository result`() = runTest {
+        val characters = listOf(mickey, arabella, alliesOnlyCharacter)
         val repository = FakeCharacterRepository(
-            getCharactersResult = Result.Success(characterPage(characters)),
+            getCharactersResult = Result.Success(
+                characterPage(
+                    characters = characters,
+                    currentPage = 2,
+                    pageSize = 25,
+                    hasNextPage = true,
+                    totalPages = 5,
+                    isFromCache = true,
+                )
+            ),
         )
         val useCase = GetCharactersUseCase(repository)
 
         val result = useCase(page = 2, pageSize = 25)
 
-        assertThat(result).isEqualTo(Result.Success(characterPage(characters)))
+        assertThat(result).isEqualTo(
+            Result.Success(
+                characterPage(
+                    characters = listOf(mickey),
+                    currentPage = 2,
+                    pageSize = 25,
+                    hasNextPage = true,
+                    totalPages = 5,
+                    isFromCache = true,
+                )
+            )
+        )
         assertThat(repository.getCharactersCalled).isTrue()
         assertThat(repository.requestedPage).isEqualTo(2)
         assertThat(repository.requestedPageSize).isEqualTo(25)
+    }
+
+    @Test
+    fun `get characters keeps characters with any visible content type`() = runTest {
+        val visibleCharacters = listOf(
+            arabella.copy(id = 1, films = listOf("Fantasia")),
+            arabella.copy(id = 2, shortFilms = listOf("Steamboat Willie")),
+            arabella.copy(id = 3, tvShows = listOf("Mickey Mouse Clubhouse")),
+            arabella.copy(id = 4, videoGames = listOf("Kingdom Hearts")),
+            arabella.copy(id = 5, parkAttractions = listOf("Mickey's PhilharMagic")),
+        )
+        val repository = FakeCharacterRepository(
+            getCharactersResult = Result.Success(characterPage(visibleCharacters)),
+        )
+        val useCase = GetCharactersUseCase(repository)
+
+        val result = useCase(page = 1, pageSize = 30)
+
+        assertThat(result).isEqualTo(Result.Success(characterPage(visibleCharacters)))
     }
 
     @Test
@@ -46,7 +85,7 @@ class CharacterUseCasesTest {
 
     @Test
     fun `search characters trims query before searching`() = runTest {
-        val characters = listOf(mickey)
+        val characters = listOf(mickey, arabella)
         val repository = FakeCharacterRepository(
             searchCharactersResult = Result.Success(characterPage(characters)),
         )
@@ -54,7 +93,7 @@ class CharacterUseCasesTest {
 
         val result = useCase("  Mickey Mouse  ", page = 3, pageSize = 10)
 
-        assertThat(result).isEqualTo(Result.Success(characterPage(characters)))
+        assertThat(result).isEqualTo(Result.Success(characterPage(listOf(mickey))))
         assertThat(repository.requestedSearchQuery).isEqualTo("Mickey Mouse")
         assertThat(repository.requestedPage).isEqualTo(3)
         assertThat(repository.requestedPageSize).isEqualTo(10)
@@ -154,13 +193,16 @@ private fun characterPage(
     currentPage: Int = 1,
     pageSize: Int = 30,
     hasNextPage: Boolean = false,
+    totalPages: Int? = currentPage,
+    isFromCache: Boolean = false,
 ): CharacterPage =
     CharacterPage(
         characters = characters,
         currentPage = currentPage,
         pageSize = pageSize,
-        totalPages = currentPage,
+        totalPages = totalPages,
         hasNextPage = hasNextPage,
+        isFromCache = isFromCache,
     )
 
 private val mickey = DisneyCharacter(
@@ -176,5 +218,28 @@ private val mickey = DisneyCharacter(
     videoGames = listOf("Kingdom Hearts"),
     parkAttractions = listOf("Mickey's PhilharMagic"),
     allies = listOf("Minnie Mouse"),
+    enemies = listOf("Pete"),
+)
+
+private val arabella = DisneyCharacter(
+    id = 293,
+    name = "Arabella",
+    alignment = null,
+    imageUrl = null,
+    sourceUrl = null,
+    apiUrl = "https://api.disneyapi.dev/characters/293",
+    films = emptyList(),
+    shortFilms = emptyList(),
+    tvShows = emptyList(),
+    videoGames = emptyList(),
+    parkAttractions = emptyList(),
+    allies = emptyList(),
+    enemies = emptyList(),
+)
+
+private val alliesOnlyCharacter = arabella.copy(
+    id = 294,
+    name = "Allies Only",
+    allies = listOf("Mickey Mouse"),
     enemies = listOf("Pete"),
 )

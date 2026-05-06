@@ -15,3 +15,10 @@ data class DisneyCharacter(
     val allies: List<String>,
     val enemies: List<String>,
 )
+
+val DisneyCharacter.hasVisibleContent: Boolean
+    get() = films.isNotEmpty() ||
+        shortFilms.isNotEmpty() ||
+        tvShows.isNotEmpty() ||
+        videoGames.isNotEmpty() ||
+        parkAttractions.isNotEmpty()
