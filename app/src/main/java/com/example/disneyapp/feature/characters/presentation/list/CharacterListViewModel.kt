@@ -75,7 +75,6 @@ class CharacterListViewModel(
                 isLoadingMore = false,
                 currentPage = 0,
                 canLoadMore = false,
-                error = null,
             )
         }
 
@@ -142,7 +141,6 @@ class CharacterListViewModel(
                     isLoadingMore = false,
                     currentPage = 0,
                     canLoadMore = false,
-                    error = null,
                 )
             } else {
                 it.copy(isLoadingMore = true, error = null)

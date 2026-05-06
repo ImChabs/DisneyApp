@@ -283,6 +283,79 @@ class CharacterListViewModelTest {
     }
 
     @Test
+    fun `retry keeps error visible while replacement request is loading`() = runTest(testDispatcher) {
+        val pendingRetry = CompletableDeferred<Result<CharacterPage, DataError.Network>>()
+        val repository = FakeCharacterRepository(
+            getCharactersResult = Result.Failure(DataError.Network.NO_INTERNET),
+        )
+        val viewModel = createViewModel(repository)
+        advanceUntilIdle()
+        repository.getCharactersRequest = { _, _ -> pendingRetry.await() }
+
+        viewModel.onAction(CharacterListAction.OnRetryClick)
+        runCurrent()
+
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(
+                isLoading = true,
+                error = DataError.Network.NO_INTERNET.toUiText(),
+            ),
+        )
+
+        pendingRetry.complete(Result.Failure(DataError.Network.NO_INTERNET))
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(
+                error = DataError.Network.NO_INTERNET.toUiText(),
+            ),
+        )
+    }
+
+    @Test
+    fun `query change keeps previous error visible until search succeeds`() = runTest(testDispatcher) {
+        val pendingSearch = CompletableDeferred<Result<CharacterPage, DataError.Network>>()
+        val repository = FakeCharacterRepository(
+            getCharactersResult = Result.Failure(DataError.Network.NO_INTERNET),
+            searchCharactersRequest = { _, _, _ -> pendingSearch.await() },
+        )
+        val viewModel = createViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.onAction(CharacterListAction.OnSearchQueryChange("Minnie"))
+        runCurrent()
+
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(
+                searchQuery = "Minnie",
+                error = DataError.Network.NO_INTERNET.toUiText(),
+            ),
+        )
+
+        advanceTimeBy(300)
+        runCurrent()
+
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(
+                searchQuery = "Minnie",
+                isLoading = true,
+                error = DataError.Network.NO_INTERNET.toUiText(),
+            ),
+        )
+
+        pendingSearch.complete(Result.Success(characterPage(listOf(minnie))))
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(
+                characters = listOf(minnieListItem),
+                searchQuery = "Minnie",
+                currentPage = 1,
+            ),
+        )
+    }
+
+    @Test
     fun `load more appends next page and updates pagination state`() = runTest(testDispatcher) {
         val repository = FakeCharacterRepository(
             getCharactersRequest = { page, pageSize ->
