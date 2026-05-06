@@ -1,6 +1,7 @@
 package com.example.disneyapp.feature.characters.presentation.list
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -25,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
@@ -34,7 +37,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -80,33 +83,212 @@ fun CharacterListScreen(
     onCharacterClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(
+    Box(
         modifier = modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.characters_title),
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                ),
+    ) {
+        CharacterCatalogBackground()
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = {
+                        CharacterTitleMark()
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = Color.Transparent,
+                        titleContentColor = Color.White,
+                    ),
+                )
+            },
+            containerColor = Color.Transparent,
+        ) { contentPadding ->
+            CharacterCatalogContent(
+                state = state,
+                errorMessage = state.error?.asString(LocalContext.current),
+                onRetryClick = { onAction(CharacterListAction.OnRetryClick) },
+                onSearchQueryChange = { onAction(CharacterListAction.OnSearchQueryChange(it)) },
+                onCharacterClick = onCharacterClick,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding),
             )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { contentPadding ->
-        CharacterCatalogContent(
-            state = state,
-            errorMessage = state.error?.asString(LocalContext.current),
-            onRetryClick = { onAction(CharacterListAction.OnRetryClick) },
-            onSearchQueryChange = { onAction(CharacterListAction.OnSearchQueryChange(it)) },
-            onCharacterClick = onCharacterClick,
+        }
+    }
+}
+
+@Composable
+private fun CharacterCatalogBackground(modifier: Modifier = Modifier) {
+    val backgroundColors = listOf(
+        Color(0xFF07152D),
+        Color(0xFF111D3D),
+        Color(0xFF171A3A),
+        Color(0xFF201735),
+    )
+    val topAccent = Color(0xFF5C86FF).copy(alpha = 0.24f)
+    val middleAccent = Color(0xFF8D6CFF).copy(alpha = 0.18f)
+    val bottomAccent = Color(0xFFC472FF).copy(alpha = 0.16f)
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = backgroundColors,
+                ),
+            ),
+    ) {
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding),
+                .align(Alignment.TopEnd)
+                .offset(x = 92.dp, y = (-68).dp)
+                .size(320.dp)
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            topAccent,
+                            Color.Transparent,
+                        ),
+                    ),
+                    shape = CircleShape,
+                ),
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .offset(x = (-132).dp, y = (-12).dp)
+                .size(340.dp)
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            middleAccent,
+                            Color.Transparent,
+                        ),
+                    ),
+                    shape = CircleShape,
+                ),
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = 128.dp, y = 96.dp)
+                .size(360.dp)
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            bottomAccent,
+                            Color.Transparent,
+                        ),
+                    ),
+                    shape = CircleShape,
+                ),
+        )
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val starColor = Color.White
+            val glowColor = Color(0xFFFFD782)
+            val stars = listOf(
+                Offset(size.width * 0.05f, size.height * 0.23f),
+                Offset(size.width * 0.10f, size.height * 0.13f),
+                Offset(size.width * 0.14f, size.height * 0.30f),
+                Offset(size.width * 0.28f, size.height * 0.08f),
+                Offset(size.width * 0.33f, size.height * 0.24f),
+                Offset(size.width * 0.43f, size.height * 0.10f),
+                Offset(size.width * 0.54f, size.height * 0.16f),
+                Offset(size.width * 0.64f, size.height * 0.07f),
+                Offset(size.width * 0.72f, size.height * 0.22f),
+                Offset(size.width * 0.82f, size.height * 0.11f),
+                Offset(size.width * 0.92f, size.height * 0.28f),
+                Offset(size.width * 0.18f, size.height * 0.38f),
+                Offset(size.width * 0.31f, size.height * 0.45f),
+                Offset(size.width * 0.48f, size.height * 0.36f),
+                Offset(size.width * 0.61f, size.height * 0.52f),
+                Offset(size.width * 0.72f, size.height * 0.45f),
+                Offset(size.width * 0.91f, size.height * 0.50f),
+                Offset(size.width * 0.12f, size.height * 0.62f),
+                Offset(size.width * 0.36f, size.height * 0.58f),
+                Offset(size.width * 0.52f, size.height * 0.68f),
+                Offset(size.width * 0.68f, size.height * 0.78f),
+                Offset(size.width * 0.86f, size.height * 0.70f),
+                Offset(size.width * 0.24f, size.height * 0.84f),
+                Offset(size.width * 0.44f, size.height * 0.88f),
+                Offset(size.width * 0.78f, size.height * 0.90f),
+            )
+
+            stars.forEachIndexed { index, offset ->
+                val radius = when {
+                    index % 7 == 0 -> 1.9.dp.toPx()
+                    index % 3 == 0 -> 1.45.dp.toPx()
+                    else -> 1.05.dp.toPx()
+                }
+                val alpha = when {
+                    index % 7 == 0 -> 0.6f
+                    index % 2 == 0 -> 0.48f
+                    else -> 0.32f
+                }
+                drawCircle(
+                    color = starColor.copy(alpha = alpha),
+                    radius = radius,
+                    center = offset,
+                )
+            }
+            drawCircle(
+                color = glowColor.copy(alpha = 0.18f),
+                radius = 2.6.dp.toPx(),
+                center = Offset(size.width * 0.66f, size.height * 0.24f),
+            )
+            drawCircle(
+                color = Color(0xFFBDA8FF).copy(alpha = 0.16f),
+                radius = 3.dp.toPx(),
+                center = Offset(size.width * 0.22f, size.height * 0.74f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CharacterTitleMark(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(CircleShape)
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.tertiary,
+                        ),
+                    ),
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "D",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimary,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 7.dp, end = 7.dp)
+                    .size(5.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.tertiaryContainer),
+            )
+        }
+        Text(
+            text = stringResource(R.string.characters_title),
+            style = MaterialTheme.typography.titleLarge,
+            color = Color(0xFFF9FBFF),
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -203,9 +385,10 @@ private fun CharacterCatalogHeader(
 private fun CharacterHero(modifier: Modifier = Modifier) {
     val gradient = Brush.linearGradient(
         colors = listOf(
-            Color(0xFF273D73),
-            Color(0xFF6E5AA8),
-            Color(0xFFD8A84E),
+            Color(0xFF172E66),
+            Color(0xFF3F347F),
+            Color(0xFF7A4B9A),
+            Color(0xFFC08A3A),
         ),
     )
 
@@ -214,7 +397,7 @@ private fun CharacterHero(modifier: Modifier = Modifier) {
         shape = RoundedCornerShape(28.dp),
         tonalElevation = 4.dp,
         shadowElevation = 2.dp,
-        color = MaterialTheme.colorScheme.primaryContainer,
+        color = Color.Transparent,
     ) {
         Box(
             modifier = Modifier
@@ -256,10 +439,15 @@ private fun CharacterSearchBar(
             Text(text = stringResource(R.string.characters_search_placeholder))
         },
         colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = Color.Transparent,
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            focusedPlaceholderColor = Color.White.copy(alpha = 0.64f),
+            unfocusedPlaceholderColor = Color.White.copy(alpha = 0.58f),
+            focusedContainerColor = Color(0xFF101A35).copy(alpha = 0.78f),
+            unfocusedContainerColor = Color(0xFF101A35).copy(alpha = 0.62f),
+            focusedBorderColor = Color(0xFFC7B8FF).copy(alpha = 0.84f),
+            unfocusedBorderColor = Color.White.copy(alpha = 0.18f),
+            cursorColor = Color(0xFFFFD782),
         ),
     )
 }
