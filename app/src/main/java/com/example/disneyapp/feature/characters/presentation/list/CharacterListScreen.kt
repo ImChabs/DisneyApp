@@ -33,6 +33,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -496,11 +497,25 @@ private fun CharacterSearchBar(
 
 @Composable
 private fun CharacterFilterChips(modifier: Modifier = Modifier) {
+    val selectedContainer = Color(0xFF4D3F86).copy(alpha = 0.88f)
+    val unselectedContainer = Color(0xFF101A35).copy(alpha = 0.54f)
+    val selectedContent = Color(0xFFFFD782)
+    val unselectedContent = Color.White.copy(alpha = 0.76f)
+    val chipColors = FilterChipDefaults.elevatedFilterChipColors(
+        containerColor = unselectedContainer,
+        labelColor = unselectedContent,
+        iconColor = unselectedContent,
+        selectedContainerColor = selectedContainer,
+        selectedLabelColor = selectedContent,
+        selectedLeadingIconColor = selectedContent,
+    )
+
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .padding(top = 2.dp)
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         val labels = listOf(
             stringResource(R.string.characters_filter_all),
@@ -510,12 +525,48 @@ private fun CharacterFilterChips(modifier: Modifier = Modifier) {
         )
 
         labels.forEachIndexed { index, label ->
+            val selected = index == 0
+
             ElevatedFilterChip(
-                selected = index == 0,
+                selected = selected,
                 onClick = {},
+                modifier = Modifier.height(36.dp),
+                shape = RoundedCornerShape(22.dp),
+                colors = chipColors,
+                elevation = FilterChipDefaults.elevatedFilterChipElevation(
+                    elevation = 1.dp,
+                    pressedElevation = 2.dp,
+                    focusedElevation = 2.dp,
+                    hoveredElevation = 2.dp,
+                    draggedElevation = 3.dp,
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selected,
+                    borderColor = Color.White.copy(alpha = 0.18f),
+                    selectedBorderColor = Color(0xFFFFD782).copy(alpha = 0.46f),
+                    borderWidth = 1.dp,
+                    selectedBorderWidth = 1.dp,
+                ),
+                leadingIcon = if (selected) {
+                    {
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .background(
+                                    color = selectedContent,
+                                    shape = CircleShape,
+                                ),
+                        )
+                    }
+                } else {
+                    null
+                },
                 label = {
                     Text(
                         text = label,
+                        modifier = Modifier.padding(horizontal = 2.dp),
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
