@@ -26,7 +26,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,20 +51,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
+import com.example.disneyapp.feature.characters.presentation.components.CharacterPortrait
+import com.example.disneyapp.feature.characters.presentation.components.CharacterPortraitVariant
+import com.example.disneyapp.feature.characters.presentation.components.PremiumStatePanel
 import com.example.disneyapp.ui.theme.DisneyAppTheme
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -355,61 +357,16 @@ private fun CharacterDetailImage(
     character: CharacterDetailUi,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier) {
-        CharacterDetailImageFallback(
-            name = character.name,
-            modifier = Modifier.fillMaxSize(),
-        )
-        if (!character.imageUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = character.imageUrl,
-                contentDescription = stringResource(
-                    R.string.character_detail_image_content_description,
-                    character.name,
-                ),
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        }
-    }
-}
-
-@Composable
-private fun CharacterDetailImageFallback(
-    name: String,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF243B7A),
-                        Color(0xFF7A4B9A),
-                        Color(0xFFC08A3A),
-                    ),
-                ),
-            )
-            .padding(24.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Surface(
-            shape = CircleShape,
-            color = Color.White.copy(alpha = 0.22f),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.34f)),
-            modifier = Modifier.size(104.dp),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = name.firstOrNull()?.uppercase() ?: "?",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
-    }
+    CharacterPortrait(
+        name = character.name,
+        imageUrl = character.imageUrl,
+        contentDescription = stringResource(
+            R.string.character_detail_image_content_description,
+            character.name,
+        ),
+        modifier = modifier,
+        variant = CharacterPortraitVariant.Hero,
+    )
 }
 
 @Composable
@@ -787,11 +744,18 @@ private fun CharacterDetailError(
         modifier = modifier.padding(20.dp),
         contentAlignment = Alignment.Center,
     ) {
-        DetailStatePanel(
+        PremiumStatePanel(
             title = stringResource(R.string.character_detail_error_title),
             message = message,
+            icon = Icons.Outlined.CloudOff,
             action = {
-                Button(onClick = onRetryClick) {
+                Button(
+                    onClick = onRetryClick,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFFD782),
+                        contentColor = Color(0xFF101A35),
+                    ),
+                ) {
                     Text(text = stringResource(R.string.characters_retry))
                 }
             },
@@ -801,63 +765,11 @@ private fun CharacterDetailError(
 
 @Composable
 private fun CharacterDetailEmptyProfile(modifier: Modifier = Modifier) {
-    DetailStatePanel(
+    PremiumStatePanel(
         title = stringResource(R.string.character_detail_empty_title),
         message = stringResource(R.string.character_detail_empty_message),
         modifier = modifier,
     )
-}
-
-@Composable
-private fun DetailStatePanel(
-    title: String,
-    message: String,
-    modifier: Modifier = Modifier,
-    action: (@Composable () -> Unit)? = null,
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.94f),
-        tonalElevation = 2.dp,
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 22.dp, vertical = 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(54.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.tertiary,
-                            ),
-                        ),
-                    ),
-            )
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            if (action != null) {
-                Spacer(modifier = Modifier.height(2.dp))
-                action()
-            }
-        }
-    }
 }
 
 @Composable

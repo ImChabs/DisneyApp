@@ -43,18 +43,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
+import com.example.disneyapp.feature.characters.presentation.components.CharacterPortrait
+import com.example.disneyapp.feature.characters.presentation.components.CharacterPortraitVariant
 import com.example.disneyapp.feature.characters.presentation.components.PremiumStatePanel
 import com.example.disneyapp.feature.characters.presentation.list.CharacterListItemUi
 import com.example.disneyapp.ui.theme.DisneyAppTheme
@@ -282,37 +281,13 @@ private fun FavoriteCharacterImage(
     character: CharacterListItemUi,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.secondaryContainer,
-                            MaterialTheme.colorScheme.tertiaryContainer,
-                        ),
-                    ),
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = character.name.firstOrNull()?.uppercase() ?: "?",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-            )
-        }
-        if (!character.imageUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = character.imageUrl,
-                contentDescription = stringResource(R.string.characters_image_content_description, character.name),
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        }
-    }
+    CharacterPortrait(
+        name = character.name,
+        imageUrl = character.imageUrl,
+        contentDescription = stringResource(R.string.characters_image_content_description, character.name),
+        modifier = modifier,
+        variant = CharacterPortraitVariant.Compact,
+    )
 }
 
 @Composable
