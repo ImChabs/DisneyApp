@@ -85,6 +85,90 @@ class KtorCharacterRemoteDataSourceTest {
     }
 
     @Test
+    fun `searchCharacters decodes single object data response into domain list`() = runTest {
+        val dataSource = KtorCharacterRemoteDataSource(
+            httpClient = HttpClientFactory.create(
+                MockEngine {
+                    respondJson(
+                        """
+                            {
+                              "info": {
+                                "count": 1,
+                                "totalPages": 1,
+                                "previousPage": null,
+                                "nextPage": null
+                              },
+                              "data": {
+                                "_id": 18,
+                                "films": ["The Fox and the Hound", "The Fox and the Hound 2"],
+                                "shortFilms": [],
+                                "tvShows": [],
+                                "videoGames": [],
+                                "parkAttractions": [],
+                                "allies": [],
+                                "enemies": [],
+                                "name": "Abigail the Cow",
+                                "imageUrl": "https://example.com/abigail.jpg",
+                                "url": "https://api.disneyapi.dev/characters/18"
+                              }
+                            }
+                        """.trimIndent(),
+                    )
+                },
+            ),
+        )
+
+        val page = dataSource.searchCharacters(name = "the cow", page = 1, pageSize = 30)
+            .successData()
+
+        assertThat(page.characters).hasSize(1)
+        assertThat(page.currentPage).isEqualTo(1)
+        assertThat(page.pageSize).isEqualTo(30)
+        assertThat(page.totalPages).isEqualTo(1)
+        assertThat(page.hasNextPage).isEqualTo(false)
+        assertThat(page.characters.first().id).isEqualTo(18)
+        assertThat(page.characters.first().name).isEqualTo("Abigail the Cow")
+        assertThat(page.characters.first().films).isEqualTo(
+            listOf("The Fox and the Hound", "The Fox and the Hound 2")
+        )
+    }
+
+    @Test
+    fun `searchCharacters decodes empty response into empty page`() = runTest {
+        val dataSource = KtorCharacterRemoteDataSource(
+            httpClient = HttpClientFactory.create(
+                MockEngine {
+                    respondJson(
+                        """
+                            {
+                              "info": {
+                                "count": 0,
+                                "totalPages": 0,
+                                "previousPage": null,
+                                "nextPage": null
+                              },
+                              "data": []
+                            }
+                        """.trimIndent(),
+                    )
+                },
+            ),
+        )
+
+        val page = dataSource.searchCharacters(
+            name = "zzzz-no-character-hopefully",
+            page = 1,
+            pageSize = 30,
+        ).successData()
+
+        assertThat(page.characters).isEqualTo(emptyList())
+        assertThat(page.currentPage).isEqualTo(1)
+        assertThat(page.pageSize).isEqualTo(30)
+        assertThat(page.totalPages).isEqualTo(0)
+        assertThat(page.hasNextPage).isEqualTo(false)
+    }
+
+    @Test
     fun `getCharacter decodes detail response into one domain model`() = runTest {
         val dataSource = KtorCharacterRemoteDataSource(
             httpClient = HttpClientFactory.create(
