@@ -25,18 +25,24 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -71,11 +77,24 @@ fun CharacterDetailRoot(
     ),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    LaunchedEffect(viewModel.events) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is CharacterDetailEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message.asString(context))
+                }
+            }
+        }
+    }
 
     CharacterDetailScreen(
         state = state,
         onAction = viewModel::onAction,
         onBackClick = onBackClick,
+        snackbarHostState = snackbarHostState,
     )
 }
 
@@ -86,6 +105,7 @@ fun CharacterDetailScreen(
     onAction: (CharacterDetailAction) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         CharacterDetailBackground()
@@ -106,6 +126,14 @@ fun CharacterDetailScreen(
                     navigationIcon = {
                         DetailBackButton(onClick = onBackClick)
                     },
+                    actions = {
+                        state.character?.let { character ->
+                            DetailFavoriteButton(
+                                isFavorite = character.isFavorite,
+                                onClick = { onAction(CharacterDetailAction.OnFavoriteClick) },
+                            )
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent,
                         scrolledContainerColor = Color.Transparent,
@@ -115,6 +143,9 @@ fun CharacterDetailScreen(
                 )
             },
             containerColor = Color.Transparent,
+            snackbarHost = {
+                SnackbarHost(hostState = snackbarHostState)
+            },
         ) { contentPadding ->
             CharacterDetailContent(
                 state = state,
@@ -125,6 +156,30 @@ fun CharacterDetailScreen(
                     .padding(contentPadding),
             )
         }
+    }
+}
+
+@Composable
+private fun DetailFavoriteButton(
+    isFavorite: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier.padding(end = 8.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Favorite,
+            contentDescription = stringResource(
+                if (isFavorite) {
+                    R.string.characters_remove_favorite_content_description
+                } else {
+                    R.string.characters_add_favorite_content_description
+                },
+            ),
+            tint = if (isFavorite) Color(0xFFFFD782) else Color.White.copy(alpha = 0.76f),
+        )
     }
 }
 
@@ -899,6 +954,7 @@ private fun CharacterDetailScreenPreview() {
                         CharacterDetailSectionUi("TV shows", listOf("Mickey Mouse Clubhouse")),
                         CharacterDetailSectionUi("Allies", listOf("Minnie Mouse", "Goofy")),
                     ),
+                    isFavorite = true,
                 ),
             ),
             onAction = {},

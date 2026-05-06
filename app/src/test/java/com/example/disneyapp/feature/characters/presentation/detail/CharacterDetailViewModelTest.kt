@@ -8,10 +8,13 @@ import assertk.assertions.isTrue
 import com.example.disneyapp.core.domain.DataError
 import com.example.disneyapp.core.domain.Result
 import com.example.disneyapp.core.presentation.toUiText
+import com.example.disneyapp.feature.characters.FakeFavoriteCharacterLocalDataSource
 import com.example.disneyapp.feature.characters.domain.model.CharacterPage
 import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
 import com.example.disneyapp.feature.characters.domain.repository.CharacterRepository
 import com.example.disneyapp.feature.characters.domain.usecase.GetCharacterDetailUseCase
+import com.example.disneyapp.feature.characters.domain.usecase.ObserveIsFavoriteCharacterUseCase
+import com.example.disneyapp.feature.characters.domain.usecase.ToggleFavoriteCharacterUseCase
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -117,12 +120,44 @@ class CharacterDetailViewModelTest {
         )
     }
 
+    @Test
+    fun `favorite state marks loaded detail as favorite`() = runTest(testDispatcher) {
+        val repository = FakeCharacterRepository(
+            getCharacterResult = Result.Success(mickey),
+        )
+        val favorites = FakeFavoriteCharacterLocalDataSource(initialFavorites = listOf(mickey))
+        val viewModel = createViewModel(repository, favorites)
+
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value.character).isEqualTo(mickeyDetail.copy(isFavorite = true))
+    }
+
+    @Test
+    fun `favorite click saves loaded character`() = runTest(testDispatcher) {
+        val repository = FakeCharacterRepository(
+            getCharacterResult = Result.Success(mickey),
+        )
+        val favorites = FakeFavoriteCharacterLocalDataSource()
+        val viewModel = createViewModel(repository, favorites)
+        advanceUntilIdle()
+
+        viewModel.onAction(CharacterDetailAction.OnFavoriteClick)
+        advanceUntilIdle()
+
+        assertThat(favorites.savedFavorites).containsExactly(mickey)
+        assertThat(viewModel.state.value.character).isEqualTo(mickeyDetail.copy(isFavorite = true))
+    }
+
     private fun createViewModel(
         repository: CharacterRepository,
+        favoriteLocalDataSource: FakeFavoriteCharacterLocalDataSource = FakeFavoriteCharacterLocalDataSource(),
     ): CharacterDetailViewModel =
         CharacterDetailViewModel(
             characterId = 4703,
             getCharacterDetailUseCase = GetCharacterDetailUseCase(repository),
+            observeIsFavoriteCharacterUseCase = ObserveIsFavoriteCharacterUseCase(favoriteLocalDataSource),
+            toggleFavoriteCharacterUseCase = ToggleFavoriteCharacterUseCase(favoriteLocalDataSource),
         )
 }
 

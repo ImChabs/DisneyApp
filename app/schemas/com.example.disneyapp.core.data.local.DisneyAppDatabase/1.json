@@ -1,0 +1,104 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "e2555ebe500e8118670520baf8a080a2",
+    "entities": [
+      {
+        "tableName": "favorite_characters",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `name` TEXT, `alignment` TEXT, `imageUrl` TEXT, `sourceUrl` TEXT, `apiUrl` TEXT, `films` TEXT NOT NULL, `shortFilms` TEXT NOT NULL, `tvShows` TEXT NOT NULL, `videoGames` TEXT NOT NULL, `parkAttractions` TEXT NOT NULL, `allies` TEXT NOT NULL, `enemies` TEXT NOT NULL, `favoritedAtMillis` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "alignment",
+            "columnName": "alignment",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "imageUrl",
+            "columnName": "imageUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceUrl",
+            "columnName": "sourceUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "apiUrl",
+            "columnName": "apiUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "films",
+            "columnName": "films",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shortFilms",
+            "columnName": "shortFilms",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tvShows",
+            "columnName": "tvShows",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "videoGames",
+            "columnName": "videoGames",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parkAttractions",
+            "columnName": "parkAttractions",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "allies",
+            "columnName": "allies",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enemies",
+            "columnName": "enemies",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "favoritedAtMillis",
+            "columnName": "favoritedAtMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e2555ebe500e8118670520baf8a080a2')"
+    ]
+  }
+}

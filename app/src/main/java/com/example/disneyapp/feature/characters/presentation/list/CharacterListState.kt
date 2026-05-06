@@ -26,14 +26,16 @@ data class CharacterListItemUi(
     val name: String,
     val imageUrl: String?,
     val metadataBadges: List<String> = emptyList(),
+    val isFavorite: Boolean = false,
 )
 
-fun DisneyCharacter.toCharacterListItemUi(): CharacterListItemUi =
+fun DisneyCharacter.toCharacterListItemUi(isFavorite: Boolean = false): CharacterListItemUi =
     CharacterListItemUi(
         id = id,
         name = name?.takeIf { it.isNotBlank() } ?: "Unknown character",
         imageUrl = imageUrl,
         metadataBadges = buildMetadataBadges(),
+        isFavorite = isFavorite,
     )
 
 private fun DisneyCharacter.buildMetadataBadges(): List<String> =

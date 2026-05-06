@@ -26,6 +26,8 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,17 +36,22 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,14 +78,29 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun CharacterListRoot(
     onCharacterClick: (Int) -> Unit = {},
+    onFavoritesClick: () -> Unit = {},
     viewModel: CharacterListViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    LaunchedEffect(viewModel.events) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is CharacterListEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message.asString(context))
+                }
+            }
+        }
+    }
 
     CharacterListScreen(
         state = state,
         onAction = viewModel::onAction,
         onCharacterClick = onCharacterClick,
+        onFavoritesClick = onFavoritesClick,
+        snackbarHostState = snackbarHostState,
     )
 }
 
@@ -88,7 +110,9 @@ fun CharacterListScreen(
     state: CharacterListState,
     onAction: (CharacterListAction) -> Unit,
     onCharacterClick: (Int) -> Unit,
+    onFavoritesClick: () -> Unit,
     modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -101,6 +125,9 @@ fun CharacterListScreen(
                     title = {
                         CharacterTitleMark()
                     },
+                    actions = {
+                        FavoritesTopBarButton(onClick = onFavoritesClick)
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent,
                         scrolledContainerColor = Color.Transparent,
@@ -109,6 +136,9 @@ fun CharacterListScreen(
                 )
             },
             containerColor = Color.Transparent,
+            snackbarHost = {
+                SnackbarHost(hostState = snackbarHostState)
+            },
         ) { contentPadding ->
             CharacterCatalogContent(
                 state = state,
@@ -116,12 +146,30 @@ fun CharacterListScreen(
                 onRetryClick = { onAction(CharacterListAction.OnRetryClick) },
                 onLoadMore = { onAction(CharacterListAction.OnLoadMore) },
                 onSearchQueryChange = { onAction(CharacterListAction.OnSearchQueryChange(it)) },
+                onFavoriteClick = { onAction(CharacterListAction.OnFavoriteClick(it)) },
                 onCharacterClick = onCharacterClick,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(contentPadding),
             )
         }
+    }
+}
+
+@Composable
+private fun FavoritesTopBarButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier.padding(end = 8.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Favorite,
+            contentDescription = stringResource(R.string.characters_favorites_content_description),
+            tint = Color(0xFFFFD782),
+        )
     }
 }
 
@@ -308,6 +356,7 @@ private fun CharacterCatalogContent(
     onRetryClick: () -> Unit,
     onLoadMore: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
+    onFavoriteClick: (Int) -> Unit,
     onCharacterClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -387,6 +436,7 @@ private fun CharacterCatalogContent(
             CharacterCard(
                 character = character,
                 onClick = { onCharacterClick(character.id) },
+                onFavoriteClick = { onFavoriteClick(character.id) },
             )
         }
 
@@ -586,6 +636,7 @@ private fun CharacterFilterChips(modifier: Modifier = Modifier) {
 private fun CharacterCard(
     character: CharacterListItemUi,
     onClick: () -> Unit,
+    onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -606,6 +657,14 @@ private fun CharacterCard(
             CharacterImage(
                 character = character,
                 modifier = Modifier.fillMaxSize(),
+            )
+
+            FavoriteCardButton(
+                isFavorite = character.isFavorite,
+                onClick = onFavoriteClick,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp),
             )
 
             Box(
@@ -649,6 +708,35 @@ private fun CharacterCard(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun FavoriteCardButton(
+    isFavorite: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.size(38.dp),
+        shape = CircleShape,
+        color = Color(0xFF101A35).copy(alpha = 0.74f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+    ) {
+        IconButton(onClick = onClick) {
+            Icon(
+                imageVector = Icons.Filled.Favorite,
+                contentDescription = stringResource(
+                    if (isFavorite) {
+                        R.string.characters_remove_favorite_content_description
+                    } else {
+                        R.string.characters_add_favorite_content_description
+                    },
+                ),
+                tint = if (isFavorite) Color(0xFFFFD782) else Color.White.copy(alpha = 0.78f),
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }
@@ -1003,6 +1091,7 @@ private fun CharacterListScreenPreview() {
             ),
             onAction = {},
             onCharacterClick = {},
+            onFavoritesClick = {},
         )
     }
 }
@@ -1015,6 +1104,7 @@ private fun CharacterListEmptyPreview() {
             state = CharacterListState(searchQuery = "Aurora"),
             onAction = {},
             onCharacterClick = {},
+            onFavoritesClick = {},
         )
     }
 }
@@ -1027,6 +1117,7 @@ private fun CharacterListLoadingPreview() {
             state = CharacterListState(isLoading = true),
             onAction = {},
             onCharacterClick = {},
+            onFavoritesClick = {},
         )
     }
 }

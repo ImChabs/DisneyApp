@@ -10,6 +10,9 @@
     <string name="characters_filter_parks">Parks</string>
     <string name="characters_badge_profile">Profile</string>
     <string name="characters_image_content_description">%1$s character image</string>
+    <string name="characters_favorites_content_description">Open favorites</string>
+    <string name="characters_add_favorite_content_description">Save favorite</string>
+    <string name="characters_remove_favorite_content_description">Remove favorite</string>
     <string name="characters_error_title">Could not load characters</string>
     <string name="characters_retry">Try again</string>
     <string name="characters_empty_title">No characters yet</string>
@@ -24,4 +27,7 @@
     <string name="character_detail_badge_profile">Profile</string>
     <string name="character_detail_image_content_description">%1$s character portrait</string>
     <string name="character_detail_back_content_description">Go back</string>
+    <string name="favorites_title">Favorites</string>
+    <string name="favorites_empty_title">No favorites yet</string>
+    <string name="favorites_empty_message">Save characters from the catalog or detail screen and they will appear here.</string>
 </resources>

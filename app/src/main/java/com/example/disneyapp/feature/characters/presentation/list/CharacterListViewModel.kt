@@ -2,38 +2,66 @@ package com.example.disneyapp.feature.characters.presentation.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.disneyapp.core.domain.DataError
 import com.example.disneyapp.core.domain.Result
 import com.example.disneyapp.core.presentation.toUiText
+import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
 import com.example.disneyapp.feature.characters.domain.usecase.GetCharactersUseCase
+import com.example.disneyapp.feature.characters.domain.usecase.ObserveFavoriteCharacterIdsUseCase
 import com.example.disneyapp.feature.characters.domain.usecase.SearchCharactersUseCase
+import com.example.disneyapp.feature.characters.domain.usecase.ToggleFavoriteCharacterUseCase
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class CharacterListViewModel(
     private val getCharactersUseCase: GetCharactersUseCase,
     private val searchCharactersUseCase: SearchCharactersUseCase,
+    private val observeFavoriteCharacterIdsUseCase: ObserveFavoriteCharacterIdsUseCase,
+    private val toggleFavoriteCharacterUseCase: ToggleFavoriteCharacterUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CharacterListState())
     val state = _state.asStateFlow()
 
+    private val _events = Channel<CharacterListEvent>()
+    val events = _events.receiveAsFlow()
+
     private var searchDebounceJob: Job? = null
     private var requestJob: Job? = null
     private var lastSubmittedQuery: String? = null
+    private val loadedCharacters = mutableMapOf<Int, DisneyCharacter>()
+    private var favoriteCharacterIds = emptySet<Int>()
 
     init {
+        observeFavoriteCharacterIds()
         submitQuery(query = "", force = true)
     }
 
     fun onAction(action: CharacterListAction) {
         when (action) {
             is CharacterListAction.OnSearchQueryChange -> onSearchQueryChange(action.query)
+            is CharacterListAction.OnFavoriteClick -> toggleFavorite(action.characterId)
             CharacterListAction.OnRetryClick -> retry()
             CharacterListAction.OnLoadMore -> loadMore()
+        }
+    }
+
+    private fun observeFavoriteCharacterIds() {
+        viewModelScope.launch {
+            observeFavoriteCharacterIdsUseCase().collect { ids ->
+                favoriteCharacterIds = ids
+                _state.update { state ->
+                    state.copy(
+                        characters = state.characters.map { character ->
+                            character.copy(isFavorite = character.id in ids)
+                        },
+                    )
+                }
+            }
         }
     }
 
@@ -133,13 +161,20 @@ class CharacterListViewModel(
         ) {
             is Result.Success -> {
                 _state.update {
+                    result.data.characters.forEach { character ->
+                        loadedCharacters[character.id] = character
+                    }
                     val nextCharacters = if (replace) {
                         result.data.characters.map { character ->
-                            character.toCharacterListItemUi()
+                            character.toCharacterListItemUi(
+                                isFavorite = character.id in favoriteCharacterIds,
+                            )
                         }
                     } else {
                         val loadedCharacters = result.data.characters.map { character ->
-                            character.toCharacterListItemUi()
+                            character.toCharacterListItemUi(
+                                isFavorite = character.id in favoriteCharacterIds,
+                            )
                         }
                         (it.characters + loadedCharacters).distinctBy { character -> character.id }
                     }
@@ -161,6 +196,18 @@ class CharacterListViewModel(
                         error = result.error.toUiText(),
                     )
                 }
+            }
+        }
+    }
+
+    private fun toggleFavorite(characterId: Int) {
+        val character = loadedCharacters[characterId] ?: return
+        viewModelScope.launch {
+            when (val result = toggleFavoriteCharacterUseCase(character)) {
+                is Result.Success -> Unit
+                is Result.Failure -> _events.send(
+                    CharacterListEvent.ShowSnackbar(result.error.toUiText()),
+                )
             }
         }
     }

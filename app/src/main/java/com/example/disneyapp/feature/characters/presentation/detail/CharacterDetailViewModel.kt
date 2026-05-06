@@ -4,26 +4,54 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.disneyapp.core.domain.Result
 import com.example.disneyapp.core.presentation.toUiText
+import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
 import com.example.disneyapp.feature.characters.domain.usecase.GetCharacterDetailUseCase
+import com.example.disneyapp.feature.characters.domain.usecase.ObserveIsFavoriteCharacterUseCase
+import com.example.disneyapp.feature.characters.domain.usecase.ToggleFavoriteCharacterUseCase
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class CharacterDetailViewModel(
     private val characterId: Int,
     private val getCharacterDetailUseCase: GetCharacterDetailUseCase,
+    private val observeIsFavoriteCharacterUseCase: ObserveIsFavoriteCharacterUseCase,
+    private val toggleFavoriteCharacterUseCase: ToggleFavoriteCharacterUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CharacterDetailState())
     val state = _state.asStateFlow()
 
+    private val _events = Channel<CharacterDetailEvent>()
+    val events = _events.receiveAsFlow()
+
+    private var character: DisneyCharacter? = null
+    private var isFavorite = false
+
     init {
+        observeFavoriteState()
         loadCharacter()
     }
 
     fun onAction(action: CharacterDetailAction) {
         when (action) {
             CharacterDetailAction.OnRetryClick -> loadCharacter()
+            CharacterDetailAction.OnFavoriteClick -> toggleFavorite()
+        }
+    }
+
+    private fun observeFavoriteState() {
+        viewModelScope.launch {
+            observeIsFavoriteCharacterUseCase(characterId).collect { favorite ->
+                isFavorite = favorite
+                _state.update { state ->
+                    state.copy(
+                        character = state.character?.copy(isFavorite = favorite),
+                    )
+                }
+            }
         }
     }
 
@@ -33,9 +61,10 @@ class CharacterDetailViewModel(
 
             when (val result = getCharacterDetailUseCase(characterId)) {
                 is Result.Success -> {
+                    character = result.data
                     _state.update {
                         it.copy(
-                            character = result.data.toCharacterDetailUi(),
+                            character = result.data.toCharacterDetailUi(isFavorite = isFavorite),
                             isLoading = false,
                             error = null,
                         )
@@ -49,6 +78,18 @@ class CharacterDetailViewModel(
                         )
                     }
                 }
+            }
+        }
+    }
+
+    private fun toggleFavorite() {
+        val currentCharacter = character ?: return
+        viewModelScope.launch {
+            when (val result = toggleFavoriteCharacterUseCase(currentCharacter)) {
+                is Result.Success -> Unit
+                is Result.Failure -> _events.send(
+                    CharacterDetailEvent.ShowSnackbar(result.error.toUiText()),
+                )
             }
         }
     }
