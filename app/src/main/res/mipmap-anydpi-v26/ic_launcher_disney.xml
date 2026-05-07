@@ -2,5 +2,4 @@
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/splash_background" />
     <foreground android:drawable="@drawable/disney_splash_system_logo" />
-    <monochrome android:drawable="@drawable/disney_splash_native_castle" />
 </adaptive-icon>
