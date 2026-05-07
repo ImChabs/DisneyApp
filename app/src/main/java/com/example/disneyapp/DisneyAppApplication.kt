@@ -5,6 +5,7 @@ import com.example.disneyapp.di.charactersDataModule
 import com.example.disneyapp.di.charactersDomainModule
 import com.example.disneyapp.di.charactersPresentationModule
 import com.example.disneyapp.di.coreDataModule
+import com.example.disneyapp.di.filmsPresentationModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
@@ -19,6 +20,7 @@ class DisneyAppApplication : Application() {
                 charactersDataModule,
                 charactersDomainModule,
                 charactersPresentationModule,
+                filmsPresentationModule,
             )
         }
     }

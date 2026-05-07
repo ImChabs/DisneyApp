@@ -84,6 +84,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun CharacterListRoot(
     onCharacterClick: (Int) -> Unit = {},
     onFavoritesClick: () -> Unit = {},
+    onFilmsClick: () -> Unit = {},
     viewModel: CharacterListViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -105,6 +106,7 @@ fun CharacterListRoot(
         onAction = viewModel::onAction,
         onCharacterClick = onCharacterClick,
         onFavoritesClick = onFavoritesClick,
+        onFilmsClick = onFilmsClick,
         snackbarHostState = snackbarHostState,
     )
 }
@@ -116,6 +118,7 @@ fun CharacterListScreen(
     onAction: (CharacterListAction) -> Unit,
     onCharacterClick: (Int) -> Unit,
     onFavoritesClick: () -> Unit,
+    onFilmsClick: () -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
@@ -153,6 +156,7 @@ fun CharacterListScreen(
                 onSearchQueryChange = { onAction(CharacterListAction.OnSearchQueryChange(it)) },
                 onFavoriteClick = { onAction(CharacterListAction.OnFavoriteClick(it)) },
                 onCharacterClick = onCharacterClick,
+                onFilmsClick = onFilmsClick,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(contentPadding),
@@ -353,6 +357,7 @@ private fun CharacterCatalogContent(
     onSearchQueryChange: (String) -> Unit,
     onFavoriteClick: (Int) -> Unit,
     onCharacterClick: (Int) -> Unit,
+    onFilmsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val gridState = rememberLazyGridState()
@@ -395,6 +400,7 @@ private fun CharacterCatalogContent(
                 searchQuery = state.searchQuery,
                 isLoading = state.isLoading,
                 onSearchQueryChange = onSearchQueryChange,
+                onFilmsClick = onFilmsClick,
             )
         }
 
@@ -449,6 +455,7 @@ private fun CharacterCatalogHeader(
     searchQuery: String,
     isLoading: Boolean,
     onSearchQueryChange: (String) -> Unit,
+    onFilmsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -471,7 +478,7 @@ private fun CharacterCatalogHeader(
                 )
             }
         }
-        CharacterFilterChips()
+        CharacterFilterChips(onFilmsClick = onFilmsClick)
         Spacer(modifier = Modifier.height(2.dp))
     }
 }
@@ -539,7 +546,10 @@ private fun CharacterSearchBar(
 }
 
 @Composable
-private fun CharacterFilterChips(modifier: Modifier = Modifier) {
+private fun CharacterFilterChips(
+    onFilmsClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val selectedContainer = DisneyColors.VioletMuted.copy(alpha = 0.88f)
     val unselectedContainer = DisneyColors.Ink.copy(alpha = 0.54f)
     val selectedContent = DisneyColors.Gold
@@ -572,7 +582,11 @@ private fun CharacterFilterChips(modifier: Modifier = Modifier) {
 
             ElevatedFilterChip(
                 selected = selected,
-                onClick = {},
+                onClick = {
+                    if (index == FILMS_FILTER_INDEX) {
+                        onFilmsClick()
+                    }
+                },
                 modifier = Modifier.height(36.dp),
                 shape = RoundedCornerShape(22.dp),
                 colors = chipColors,
@@ -982,6 +996,7 @@ private fun CharacterListEmptyState(
 }
 
 private const val LOAD_MORE_ITEM_THRESHOLD = 6
+private const val FILMS_FILTER_INDEX = 1
 
 @Preview(showBackground = true)
 @Composable
@@ -1013,6 +1028,7 @@ private fun CharacterListScreenPreview() {
             onAction = {},
             onCharacterClick = {},
             onFavoritesClick = {},
+            onFilmsClick = {},
         )
     }
 }
@@ -1026,6 +1042,7 @@ private fun CharacterListEmptyPreview() {
             onAction = {},
             onCharacterClick = {},
             onFavoritesClick = {},
+            onFilmsClick = {},
         )
     }
 }
@@ -1039,6 +1056,7 @@ private fun CharacterListLoadingPreview() {
             onAction = {},
             onCharacterClick = {},
             onFavoritesClick = {},
+            onFilmsClick = {},
         )
     }
 }
