@@ -1,6 +1,7 @@
 <resources>
-    <string name="app_name">DisneyApp</string>
-    <string name="characters_title">Disney App</string>
+    <string name="app_name">DisneyCast</string>
+    <string name="splash_logo_content_description">DisneyCast logo</string>
+    <string name="characters_title">DisneyCast</string>
     <string name="characters_hero_title">Character Catalog</string>
     <string name="characters_hero_description">Browse Disney characters, search by name, and discover where they appear across stories and parks.</string>
     <string name="characters_search_placeholder">Search characters</string>
