@@ -27,6 +27,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -134,6 +136,7 @@ fun FavoriteCharactersScreen(
         ) { contentPadding ->
             FavoriteCharactersContent(
                 state = state,
+                onSearchQueryChange = { onAction(FavoriteCharactersAction.OnSearchQueryChange(it)) },
                 onFavoriteClick = { onAction(FavoriteCharactersAction.OnFavoriteClick(it)) },
                 onCharacterClick = onCharacterClick,
                 modifier = Modifier
@@ -147,6 +150,7 @@ fun FavoriteCharactersScreen(
 @Composable
 private fun FavoriteCharactersContent(
     state: FavoriteCharactersState,
+    onSearchQueryChange: (String) -> Unit,
     onFavoriteClick: (Int) -> Unit,
     onCharacterClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -158,9 +162,26 @@ private fun FavoriteCharactersContent(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        if (state.isEmpty) {
+        if (!state.isEmpty) {
             item(span = { GridItemSpan(maxLineSpan) }) {
-                FavoritesEmptyState()
+                FavoriteCharactersSearchBar(
+                    query = state.searchQuery,
+                    onQueryChange = onSearchQueryChange,
+                )
+            }
+        }
+
+        when {
+            state.isEmpty -> {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    FavoritesEmptyState()
+                }
+            }
+
+            state.isEmptySearchResult -> {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    FavoritesEmptySearchState()
+                }
             }
         }
 
@@ -175,6 +196,35 @@ private fun FavoriteCharactersContent(
             )
         }
     }
+}
+
+@Composable
+private fun FavoriteCharactersSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = modifier.fillMaxWidth(),
+        singleLine = true,
+        shape = RoundedCornerShape(24.dp),
+        placeholder = {
+            Text(text = stringResource(R.string.favorites_search_placeholder))
+        },
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            focusedPlaceholderColor = Color.White.copy(alpha = 0.64f),
+            unfocusedPlaceholderColor = Color.White.copy(alpha = 0.58f),
+            focusedContainerColor = DisneyColors.Ink.copy(alpha = 0.78f),
+            unfocusedContainerColor = DisneyColors.Ink.copy(alpha = 0.62f),
+            focusedBorderColor = DisneyColors.Lavender.copy(alpha = 0.84f),
+            unfocusedBorderColor = Color.White.copy(alpha = 0.18f),
+            cursorColor = DisneyColors.Gold,
+        ),
+    )
 }
 
 @Composable
@@ -291,6 +341,16 @@ private fun FavoritesEmptyState(modifier: Modifier = Modifier) {
     PremiumStatePanel(
         title = stringResource(R.string.favorites_empty_title),
         message = stringResource(R.string.favorites_empty_message),
+        icon = Icons.Filled.Favorite,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun FavoritesEmptySearchState(modifier: Modifier = Modifier) {
+    PremiumStatePanel(
+        title = stringResource(R.string.favorites_empty_search_title),
+        message = stringResource(R.string.favorites_empty_search_message),
         icon = Icons.Filled.Favorite,
         modifier = modifier,
     )

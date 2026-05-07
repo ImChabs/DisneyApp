@@ -49,6 +49,9 @@
     <string name="character_detail_image_content_description">%1$s character portrait</string>
     <string name="character_detail_back_content_description">Go back</string>
     <string name="favorites_title">Favorites</string>
+    <string name="favorites_search_placeholder">Search favorites</string>
     <string name="favorites_empty_title">No favorites yet</string>
     <string name="favorites_empty_message">Save characters from the catalog or detail screen and they will appear here.</string>
+    <string name="favorites_empty_search_title">No favorite matches</string>
+    <string name="favorites_empty_search_message">Try another name or clear the search field.</string>
 </resources>
