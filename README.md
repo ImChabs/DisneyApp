@@ -44,7 +44,13 @@ Screen state is exposed with `StateFlow`, user interactions are modeled as actio
 
 ## Screenshots
 
-Screenshots will be added soon.
+| Character Catalog | Character Search | Favorites |
+| --- | --- | --- |
+| ![Character catalog screen](docs/screenshots/Screenshot_20260507-094311_DisneyApp.jpg) | ![Character search screen](docs/screenshots/Screenshot_20260507-094325_DisneyApp.jpg) | ![Favorites screen](docs/screenshots/Screenshot_20260507-094348_DisneyApp.jpg) |
+
+| Character List | Film Appearances | Character Detail |
+| --- | --- | --- |
+| ![Character list screen](docs/screenshots/Screenshot_20260507-094435_DisneyApp.jpg) | ![Film appearances screen](docs/screenshots/Screenshot_20260507-094456_DisneyApp.jpg) | ![Character detail screen](docs/screenshots/Screenshot_20260507-094709_DisneyApp.jpg) |
 
 ## How to Run
 
@@ -111,7 +117,7 @@ The project is in active development as a focused Android portfolio app. The cur
 
 ## Next Improvements
 
-- Add screenshots and short demo media to the README.
+- Add short demo media to the README.
 - Expand focused catalog sections such as Shows, Parks, and attractions.
 - Continue improving UI polish and accessibility.
 - Increase test coverage around new catalog sections.
