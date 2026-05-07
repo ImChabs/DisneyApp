@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudOff
@@ -34,6 +36,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -50,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
+import com.example.disneyapp.core.presentation.components.PremiumScrollToTopButton
 import com.example.disneyapp.feature.catalog.presentation.CatalogScaffold
 import com.example.disneyapp.feature.catalog.presentation.CatalogSection
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortrait
@@ -136,58 +140,80 @@ private fun FilmsContent(
     onCharacterClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(start = 20.dp, top = 0.dp, end = 20.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        item {
-            FilmsHeader(
-                query = state.searchQuery,
-                isLoading = state.isLoading,
-                onQueryChange = onSearchQueryChange,
-            )
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val showScrollToTop by remember {
+        derivedStateOf { listState.firstVisibleItemIndex > 0 }
+    }
+
+    Box(modifier = modifier) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 20.dp, top = 0.dp, end = 20.dp, bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            item {
+                FilmsHeader(
+                    query = state.searchQuery,
+                    isLoading = state.isLoading,
+                    onQueryChange = onSearchQueryChange,
+                )
+            }
+
+            when {
+                errorMessage != null -> {
+                    item {
+                        FilmsErrorState(
+                            message = errorMessage,
+                            isLoading = state.isLoading,
+                            onRetryClick = onRetryClick,
+                        )
+                    }
+                }
+
+                state.isIdle -> {
+                    item {
+                        FilmsIdleState()
+                    }
+                }
+
+                state.isLoading -> {
+                    item {
+                        FilmsLoadingState()
+                    }
+                }
+
+                state.isEmptyResult -> {
+                    item {
+                        FilmsEmptyState()
+                    }
+                }
+            }
+
+            items(
+                items = state.results,
+                key = { it.characterId },
+            ) { result ->
+                FilmCharacterCard(
+                    result = result,
+                    onClick = { onCharacterClick(result.characterId) },
+                )
+            }
         }
 
-        when {
-            errorMessage != null -> {
-                item {
-                    FilmsErrorState(
-                        message = errorMessage,
-                        isLoading = state.isLoading,
-                        onRetryClick = onRetryClick,
-                    )
+        PremiumScrollToTopButton(
+            isVisible = showScrollToTop,
+            onClick = {
+                coroutineScope.launch {
+                    listState.animateScrollToItem(0)
                 }
-            }
-
-            state.isIdle -> {
-                item {
-                    FilmsIdleState()
-                }
-            }
-
-            state.isLoading -> {
-                item {
-                    FilmsLoadingState()
-                }
-            }
-
-            state.isEmptyResult -> {
-                item {
-                    FilmsEmptyState()
-                }
-            }
-        }
-
-        items(
-            items = state.results,
-            key = { it.characterId },
-        ) { result ->
-            FilmCharacterCard(
-                result = result,
-                onClick = { onCharacterClick(result.characterId) },
-            )
-        }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .navigationBarsPadding()
+                .padding(end = 20.dp, bottom = 20.dp),
+        )
     }
 }
 

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -42,6 +43,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -63,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
+import com.example.disneyapp.core.presentation.components.PremiumScrollToTopButton
 import com.example.disneyapp.feature.catalog.presentation.CatalogScaffold
 import com.example.disneyapp.feature.catalog.presentation.CatalogSection
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortrait
@@ -173,7 +176,11 @@ private fun CharacterCatalogContent(
     modifier: Modifier = Modifier,
 ) {
     val gridState = rememberLazyGridState()
+    val coroutineScope = rememberCoroutineScope()
     var handledScrollResetRequest by rememberSaveable { mutableIntStateOf(0) }
+    val showScrollToTop by remember {
+        derivedStateOf { gridState.firstVisibleItemIndex > 0 }
+    }
 
     LaunchedEffect(resetRequest) {
         if (resetRequest > handledScrollResetRequest) {
@@ -207,65 +214,80 @@ private fun CharacterCatalogContent(
             }
     }
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        state = gridState,
-        modifier = modifier,
-        contentPadding = PaddingValues(start = 20.dp, top = 0.dp, end = 20.dp, bottom = 28.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            CharacterCatalogHeader(
-                searchQuery = state.searchQuery,
-                isLoading = state.isLoading,
-                onSearchQueryChange = onSearchQueryChange,
-            )
-        }
-
-        when {
-            errorMessage != null -> {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    CharacterListErrorState(
-                        message = errorMessage,
-                        isLoading = state.isLoading,
-                        onRetryClick = onRetryClick,
-                    )
-                }
-            }
-
-            state.isEmpty -> {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    CharacterListEmptyState(searchQuery = state.searchQuery)
-                }
-            }
-
-            state.isLoading && state.characters.isEmpty() -> {
-                items(
-                    count = 3,
-                    span = { GridItemSpan(maxLineSpan) },
-                ) {
-                    LoadingCharacterRow()
-                }
-            }
-        }
-
-        items(
-            items = state.characters,
-            key = { it.id },
-        ) { character ->
-            CharacterCard(
-                character = character,
-                onClick = { onCharacterClick(character.id) },
-                onFavoriteClick = { onFavoriteClick(character.id) },
-            )
-        }
-
-        if (state.isLoadingMore) {
+    Box(modifier = modifier) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            state = gridState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 20.dp, top = 0.dp, end = 20.dp, bottom = 96.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             item(span = { GridItemSpan(maxLineSpan) }) {
-                LoadMoreIndicator()
+                CharacterCatalogHeader(
+                    searchQuery = state.searchQuery,
+                    isLoading = state.isLoading,
+                    onSearchQueryChange = onSearchQueryChange,
+                )
+            }
+
+            when {
+                errorMessage != null -> {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        CharacterListErrorState(
+                            message = errorMessage,
+                            isLoading = state.isLoading,
+                            onRetryClick = onRetryClick,
+                        )
+                    }
+                }
+
+                state.isEmpty -> {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        CharacterListEmptyState(searchQuery = state.searchQuery)
+                    }
+                }
+
+                state.isLoading && state.characters.isEmpty() -> {
+                    items(
+                        count = 3,
+                        span = { GridItemSpan(maxLineSpan) },
+                    ) {
+                        LoadingCharacterRow()
+                    }
+                }
+            }
+
+            items(
+                items = state.characters,
+                key = { it.id },
+            ) { character ->
+                CharacterCard(
+                    character = character,
+                    onClick = { onCharacterClick(character.id) },
+                    onFavoriteClick = { onFavoriteClick(character.id) },
+                )
+            }
+
+            if (state.isLoadingMore) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    LoadMoreIndicator()
+                }
             }
         }
+
+        PremiumScrollToTopButton(
+            isVisible = showScrollToTop,
+            onClick = {
+                coroutineScope.launch {
+                    gridState.animateScrollToItem(0)
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .navigationBarsPadding()
+                .padding(end = 20.dp, bottom = 20.dp),
+        )
     }
 }
 
