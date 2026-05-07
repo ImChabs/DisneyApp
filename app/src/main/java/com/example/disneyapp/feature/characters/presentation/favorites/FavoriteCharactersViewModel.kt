@@ -26,6 +26,7 @@ class FavoriteCharactersViewModel(
     val events = _events.receiveAsFlow()
 
     private val favorites = mutableMapOf<Int, DisneyCharacter>()
+    private var favoriteCharacters = emptyList<DisneyCharacter>()
 
     init {
         observeFavorites()
@@ -33,6 +34,7 @@ class FavoriteCharactersViewModel(
 
     fun onAction(action: FavoriteCharactersAction) {
         when (action) {
+            is FavoriteCharactersAction.OnSearchQueryChange -> onSearchQueryChange(action.query)
             is FavoriteCharactersAction.OnFavoriteClick -> removeFavorite(action.characterId)
         }
     }
@@ -40,16 +42,36 @@ class FavoriteCharactersViewModel(
     private fun observeFavorites() {
         viewModelScope.launch {
             observeFavoriteCharactersUseCase().collect { characters ->
+                favoriteCharacters = characters
                 favorites.clear()
                 favorites.putAll(characters.associateBy { it.id })
-                _state.update {
-                    it.copy(
-                        favorites = characters.map { character ->
-                            character.toCharacterListItemUi(isFavorite = true)
-                        },
-                    )
+                updateFilteredFavorites()
+            }
+        }
+    }
+
+    private fun onSearchQueryChange(query: String) {
+        _state.update { it.copy(searchQuery = query) }
+        updateFilteredFavorites()
+    }
+
+    private fun updateFilteredFavorites() {
+        _state.update { state ->
+            val query = state.searchQuery.trim()
+            val filteredFavorites = if (query.isBlank()) {
+                favoriteCharacters
+            } else {
+                favoriteCharacters.filter { character ->
+                    character.name.orEmpty().contains(query, ignoreCase = true)
                 }
             }
+
+            state.copy(
+                favorites = filteredFavorites.map { character ->
+                    character.toCharacterListItemUi(isFavorite = true)
+                },
+                totalFavoritesCount = favoriteCharacters.size,
+            )
         }
     }
 

@@ -23,6 +23,7 @@ import com.example.disneyapp.feature.characters.domain.usecase.ToggleFavoriteCha
 import com.example.disneyapp.feature.characters.presentation.detail.CharacterDetailViewModel
 import com.example.disneyapp.feature.characters.presentation.favorites.FavoriteCharactersViewModel
 import com.example.disneyapp.feature.characters.presentation.list.CharacterListViewModel
+import com.example.disneyapp.feature.films.presentation.FilmsViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
@@ -66,4 +67,8 @@ val charactersPresentationModule = module {
     viewModelOf(::CharacterListViewModel)
     viewModelOf(::CharacterDetailViewModel)
     viewModelOf(::FavoriteCharactersViewModel)
+}
+
+val filmsPresentationModule = module {
+    viewModelOf(::FilmsViewModel)
 }

@@ -21,13 +21,14 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -43,21 +44,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
+import com.example.disneyapp.feature.characters.presentation.components.CharacterBackIconButton
+import com.example.disneyapp.feature.characters.presentation.components.CharacterPortrait
+import com.example.disneyapp.feature.characters.presentation.components.CharacterPortraitVariant
 import com.example.disneyapp.feature.characters.presentation.components.PremiumStatePanel
 import com.example.disneyapp.feature.characters.presentation.list.CharacterListItemUi
+import com.example.disneyapp.ui.theme.DisneyBrushes
 import com.example.disneyapp.ui.theme.DisneyAppTheme
+import com.example.disneyapp.ui.theme.DisneyColors
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -109,26 +112,20 @@ fun FavoriteCharactersScreen(
                         Text(
                             text = stringResource(R.string.favorites_title),
                             style = MaterialTheme.typography.titleLarge,
-                            color = Color(0xFFF9FBFF),
+                            color = DisneyColors.TextPrimaryOnDark,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = onBackClick) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.character_detail_back_content_description),
-                                tint = Color.White,
-                            )
-                        }
+                        CharacterBackIconButton(onClick = onBackClick)
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent,
                         scrolledContainerColor = Color.Transparent,
                         titleContentColor = Color.White,
-                        navigationIconContentColor = Color.White,
+                        navigationIconContentColor = DisneyColors.Gold,
                     ),
                 )
             },
@@ -139,6 +136,7 @@ fun FavoriteCharactersScreen(
         ) { contentPadding ->
             FavoriteCharactersContent(
                 state = state,
+                onSearchQueryChange = { onAction(FavoriteCharactersAction.OnSearchQueryChange(it)) },
                 onFavoriteClick = { onAction(FavoriteCharactersAction.OnFavoriteClick(it)) },
                 onCharacterClick = onCharacterClick,
                 modifier = Modifier
@@ -152,6 +150,7 @@ fun FavoriteCharactersScreen(
 @Composable
 private fun FavoriteCharactersContent(
     state: FavoriteCharactersState,
+    onSearchQueryChange: (String) -> Unit,
     onFavoriteClick: (Int) -> Unit,
     onCharacterClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -163,9 +162,26 @@ private fun FavoriteCharactersContent(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        if (state.isEmpty) {
+        if (!state.isEmpty) {
             item(span = { GridItemSpan(maxLineSpan) }) {
-                FavoritesEmptyState()
+                FavoriteCharactersSearchBar(
+                    query = state.searchQuery,
+                    onQueryChange = onSearchQueryChange,
+                )
+            }
+        }
+
+        when {
+            state.isEmpty -> {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    FavoritesEmptyState()
+                }
+            }
+
+            state.isEmptySearchResult -> {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    FavoritesEmptySearchState()
+                }
             }
         }
 
@@ -180,6 +196,35 @@ private fun FavoriteCharactersContent(
             )
         }
     }
+}
+
+@Composable
+private fun FavoriteCharactersSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = modifier.fillMaxWidth(),
+        singleLine = true,
+        shape = RoundedCornerShape(24.dp),
+        placeholder = {
+            Text(text = stringResource(R.string.favorites_search_placeholder))
+        },
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            focusedPlaceholderColor = Color.White.copy(alpha = 0.64f),
+            unfocusedPlaceholderColor = Color.White.copy(alpha = 0.58f),
+            focusedContainerColor = DisneyColors.Ink.copy(alpha = 0.78f),
+            unfocusedContainerColor = DisneyColors.Ink.copy(alpha = 0.62f),
+            focusedBorderColor = DisneyColors.Lavender.copy(alpha = 0.84f),
+            unfocusedBorderColor = Color.White.copy(alpha = 0.18f),
+            cursorColor = DisneyColors.Gold,
+        ),
+    )
 }
 
 @Composable
@@ -226,14 +271,14 @@ private fun FavoriteCharacterCard(
                     .padding(8.dp)
                     .size(38.dp),
                 shape = CircleShape,
-                color = Color(0xFF101A35).copy(alpha = 0.74f),
+                color = DisneyColors.Ink.copy(alpha = 0.74f),
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
             ) {
                 IconButton(onClick = onFavoriteClick) {
                     Icon(
                         imageVector = Icons.Filled.Favorite,
                         contentDescription = stringResource(R.string.characters_remove_favorite_content_description),
-                        tint = Color(0xFFFFD782),
+                        tint = DisneyColors.Gold,
                         modifier = Modifier.size(20.dp),
                     )
                 }
@@ -282,37 +327,13 @@ private fun FavoriteCharacterImage(
     character: CharacterListItemUi,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.secondaryContainer,
-                            MaterialTheme.colorScheme.tertiaryContainer,
-                        ),
-                    ),
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = character.name.firstOrNull()?.uppercase() ?: "?",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-            )
-        }
-        if (!character.imageUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = character.imageUrl,
-                contentDescription = stringResource(R.string.characters_image_content_description, character.name),
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        }
-    }
+    CharacterPortrait(
+        name = character.name,
+        imageUrl = character.imageUrl,
+        contentDescription = stringResource(R.string.characters_image_content_description, character.name),
+        modifier = modifier,
+        variant = CharacterPortraitVariant.Compact,
+    )
 }
 
 @Composable
@@ -326,19 +347,21 @@ private fun FavoritesEmptyState(modifier: Modifier = Modifier) {
 }
 
 @Composable
+private fun FavoritesEmptySearchState(modifier: Modifier = Modifier) {
+    PremiumStatePanel(
+        title = stringResource(R.string.favorites_empty_search_title),
+        message = stringResource(R.string.favorites_empty_search_message),
+        icon = Icons.Filled.Favorite,
+        modifier = modifier,
+    )
+}
+
+@Composable
 private fun FavoriteCharactersBackground(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF07152D),
-                        Color(0xFF151A3C),
-                        Color(0xFF211735),
-                    ),
-                ),
-            ),
+            .background(DisneyBrushes.favoritesBackground),
     )
     Canvas(modifier = Modifier.fillMaxSize()) {
         val stars = listOf(
@@ -383,12 +406,12 @@ private fun FavoriteCharactersBackground(modifier: Modifier = Modifier) {
             )
         }
         drawCircle(
-            color = Color(0xFFFFD782).copy(alpha = 0.18f),
+            color = DisneyColors.Gold.copy(alpha = 0.18f),
             radius = 2.8.dp.toPx(),
             center = Offset(size.width * 0.76f, size.height * 0.34f),
         )
         drawCircle(
-            color = Color(0xFFBDA8FF).copy(alpha = 0.16f),
+            color = DisneyColors.LavenderMuted.copy(alpha = 0.16f),
             radius = 3.2.dp.toPx(),
             center = Offset(size.width * 0.24f, size.height * 0.64f),
         )

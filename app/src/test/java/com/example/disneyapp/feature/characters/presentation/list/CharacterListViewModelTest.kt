@@ -619,7 +619,7 @@ private val minnie = DisneyCharacter(
     apiUrl = "https://api.disneyapi.dev/characters/1949",
     films = emptyList(),
     shortFilms = emptyList(),
-    tvShows = emptyList(),
+    tvShows = listOf("Mickey Mouse Clubhouse"),
     videoGames = emptyList(),
     parkAttractions = emptyList(),
     allies = emptyList(),
@@ -637,5 +637,5 @@ private val minnieListItem = CharacterListItemUi(
     id = 1949,
     name = "Minnie Mouse",
     imageUrl = null,
-    metadataBadges = emptyList(),
+    metadataBadges = listOf("1 show"),
 )

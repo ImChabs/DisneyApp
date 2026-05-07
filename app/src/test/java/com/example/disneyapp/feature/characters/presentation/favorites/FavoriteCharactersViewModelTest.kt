@@ -59,6 +59,81 @@ class FavoriteCharactersViewModelTest {
         assertThat(viewModel.state.value).isEqualTo(FavoriteCharactersState())
     }
 
+    @Test
+    fun `search query filters favorites by name`() = runTest(testDispatcher) {
+        val viewModel = createViewModel(
+            FakeFavoriteCharacterLocalDataSource(initialFavorites = listOf(mickey, minnie, donald)),
+        )
+        advanceUntilIdle()
+
+        viewModel.onAction(FavoriteCharactersAction.OnSearchQueryChange("minnie"))
+
+        assertThat(viewModel.state.value).isEqualTo(
+            FavoriteCharactersState(
+                favorites = listOf(minnieListItem.copy(isFavorite = true)),
+                searchQuery = "minnie",
+                totalFavoritesCount = 3,
+            ),
+        )
+    }
+
+    @Test
+    fun `search query is case insensitive`() = runTest(testDispatcher) {
+        val viewModel = createViewModel(
+            FakeFavoriteCharacterLocalDataSource(initialFavorites = listOf(mickey, minnie)),
+        )
+        advanceUntilIdle()
+
+        viewModel.onAction(FavoriteCharactersAction.OnSearchQueryChange("MICKEY"))
+
+        assertThat(viewModel.state.value).isEqualTo(
+            FavoriteCharactersState(
+                favorites = listOf(mickeyListItem.copy(isFavorite = true)),
+                searchQuery = "MICKEY",
+                totalFavoritesCount = 2,
+            ),
+        )
+    }
+
+    @Test
+    fun `clearing search query shows all favorites`() = runTest(testDispatcher) {
+        val viewModel = createViewModel(
+            FakeFavoriteCharacterLocalDataSource(initialFavorites = listOf(mickey, minnie)),
+        )
+        advanceUntilIdle()
+
+        viewModel.onAction(FavoriteCharactersAction.OnSearchQueryChange("mick"))
+        viewModel.onAction(FavoriteCharactersAction.OnSearchQueryChange(""))
+
+        assertThat(viewModel.state.value).isEqualTo(
+            FavoriteCharactersState(
+                favorites = listOf(
+                    mickeyListItem.copy(isFavorite = true),
+                    minnieListItem.copy(isFavorite = true),
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `favorites updates remain filtered when search query is active`() = runTest(testDispatcher) {
+        val favorites = FakeFavoriteCharacterLocalDataSource(initialFavorites = listOf(mickey))
+        val viewModel = createViewModel(favorites)
+        advanceUntilIdle()
+
+        viewModel.onAction(FavoriteCharactersAction.OnSearchQueryChange("min"))
+        favorites.saveFavorite(minnie)
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value).isEqualTo(
+            FavoriteCharactersState(
+                favorites = listOf(minnieListItem.copy(isFavorite = true)),
+                searchQuery = "min",
+                totalFavoritesCount = 2,
+            ),
+        )
+    }
+
     private fun createViewModel(
         favoriteLocalDataSource: FakeFavoriteCharacterLocalDataSource,
     ): FavoriteCharactersViewModel =
@@ -89,4 +164,22 @@ private val mickeyListItem = CharacterListItemUi(
     name = "Mickey Mouse",
     imageUrl = "https://example.com/mickey.jpg",
     metadataBadges = listOf("1 film", "1 short", "1 show"),
+)
+
+private val minnie = mickey.copy(
+    id = 4704,
+    name = "Minnie Mouse",
+    imageUrl = "https://example.com/minnie.jpg",
+)
+
+private val minnieListItem = mickeyListItem.copy(
+    id = 4704,
+    name = "Minnie Mouse",
+    imageUrl = "https://example.com/minnie.jpg",
+)
+
+private val donald = mickey.copy(
+    id = 4705,
+    name = "Donald Duck",
+    imageUrl = "https://example.com/donald.jpg",
 )

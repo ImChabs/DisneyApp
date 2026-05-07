@@ -29,6 +29,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.disneyapp.ui.theme.DisneyBrushes
+import com.example.disneyapp.ui.theme.DisneyColors
 
 @Composable
 fun PremiumStatePanel(
@@ -50,15 +52,7 @@ fun PremiumStatePanel(
         Box(
             modifier = Modifier
                 .clip(shape)
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF172E66).copy(alpha = 0.94f),
-                            Color(0xFF30276B).copy(alpha = 0.92f),
-                            Color(0xFF5C3B82).copy(alpha = 0.86f),
-                        ),
-                    ),
-                ),
+                .background(DisneyBrushes.panelGradient),
         ) {
             Box(
                 modifier = Modifier
@@ -83,7 +77,7 @@ fun PremiumStatePanel(
                     .background(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFFFFD782).copy(alpha = 0.18f),
+                                DisneyColors.Gold.copy(alpha = 0.18f),
                                 Color.Transparent,
                             ),
                         ),
@@ -125,7 +119,7 @@ fun PremiumStatePanel(
                             Icon(
                                 imageVector = icon,
                                 contentDescription = null,
-                                tint = Color(0xFFFFD782),
+                                tint = DisneyColors.Gold,
                                 modifier = Modifier.size(25.dp),
                             )
                         } else {
@@ -133,7 +127,7 @@ fun PremiumStatePanel(
                                 modifier = Modifier
                                     .size(20.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFFFFD782).copy(alpha = 0.82f)),
+                                    .background(DisneyColors.Gold.copy(alpha = 0.82f)),
                             )
                         }
                     }

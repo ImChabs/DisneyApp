@@ -6,7 +6,12 @@ import com.example.disneyapp.feature.characters.presentation.list.CharacterListI
 @Stable
 data class FavoriteCharactersState(
     val favorites: List<CharacterListItemUi> = emptyList(),
+    val searchQuery: String = "",
+    val totalFavoritesCount: Int = favorites.size,
 ) {
     val isEmpty: Boolean
-        get() = favorites.isEmpty()
+        get() = totalFavoritesCount == 0
+
+    val isEmptySearchResult: Boolean
+        get() = totalFavoritesCount > 0 && searchQuery.isNotBlank() && favorites.isEmpty()
 }

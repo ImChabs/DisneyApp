@@ -9,6 +9,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.example.disneyapp.feature.characters.presentation.detail.CharacterDetailRoot
 import com.example.disneyapp.feature.characters.presentation.favorites.FavoriteCharactersRoot
 import com.example.disneyapp.feature.characters.presentation.list.CharacterListRoot
+import com.example.disneyapp.feature.films.presentation.FilmsRoot
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -18,6 +19,9 @@ data object CharacterListRoute : NavKey
 data object FavoriteCharactersRoute : NavKey
 
 @Serializable
+data object FilmsRoute : NavKey
+
+@Serializable
 data class CharacterDetailRoute(
     val characterId: Int,
 ) : NavKey
@@ -25,6 +29,19 @@ data class CharacterDetailRoute(
 @Composable
 fun DisneyAppRoot() {
     val backStack = rememberNavBackStack(CharacterListRoute)
+
+    fun popToCharacters() {
+        while (backStack.size > 1) {
+            backStack.removeAt(backStack.lastIndex)
+        }
+    }
+
+    fun navigateToFilms() {
+        if (backStack.lastOrNull() == FilmsRoute) return
+
+        popToCharacters()
+        backStack.add(FilmsRoute)
+    }
 
     NavDisplay(
         backStack = backStack,
@@ -44,6 +61,18 @@ fun DisneyAppRoot() {
                     },
                     onFavoritesClick = {
                         backStack.add(FavoriteCharactersRoute)
+                    },
+                    onFilmsClick = ::navigateToFilms,
+                )
+            }
+            entry<FilmsRoute> {
+                FilmsRoot(
+                    onCharactersClick = ::popToCharacters,
+                    onFavoritesClick = {
+                        backStack.add(FavoriteCharactersRoute)
+                    },
+                    onCharacterClick = { characterId ->
+                        backStack.add(CharacterDetailRoute(characterId = characterId))
                     },
                 )
             }
