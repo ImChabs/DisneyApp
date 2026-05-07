@@ -12,12 +12,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -37,8 +39,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -53,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
+import com.example.disneyapp.core.presentation.components.PremiumScrollToTopButton
 import com.example.disneyapp.feature.characters.presentation.components.CharacterBackIconButton
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortrait
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortraitVariant
@@ -61,6 +66,7 @@ import com.example.disneyapp.feature.characters.presentation.list.CharacterListI
 import com.example.disneyapp.ui.theme.DisneyBrushes
 import com.example.disneyapp.ui.theme.DisneyAppTheme
 import com.example.disneyapp.ui.theme.DisneyColors
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -155,46 +161,68 @@ private fun FavoriteCharactersContent(
     onCharacterClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        modifier = modifier,
-        contentPadding = PaddingValues(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 28.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        if (!state.isEmpty) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                FavoriteCharactersSearchBar(
-                    query = state.searchQuery,
-                    onQueryChange = onSearchQueryChange,
+    val gridState = rememberLazyGridState()
+    val coroutineScope = rememberCoroutineScope()
+    val showScrollToTop by remember {
+        derivedStateOf { gridState.firstVisibleItemIndex > 0 }
+    }
+
+    Box(modifier = modifier) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            state = gridState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 96.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            if (!state.isEmpty) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    FavoriteCharactersSearchBar(
+                        query = state.searchQuery,
+                        onQueryChange = onSearchQueryChange,
+                    )
+                }
+            }
+
+            when {
+                state.isEmpty -> {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        FavoritesEmptyState()
+                    }
+                }
+
+                state.isEmptySearchResult -> {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        FavoritesEmptySearchState()
+                    }
+                }
+            }
+
+            items(
+                items = state.favorites,
+                key = { it.id },
+            ) { favorite ->
+                FavoriteCharacterCard(
+                    character = favorite,
+                    onClick = { onCharacterClick(favorite.id) },
+                    onFavoriteClick = { onFavoriteClick(favorite.id) },
                 )
             }
         }
 
-        when {
-            state.isEmpty -> {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    FavoritesEmptyState()
+        PremiumScrollToTopButton(
+            isVisible = showScrollToTop,
+            onClick = {
+                coroutineScope.launch {
+                    gridState.animateScrollToItem(0)
                 }
-            }
-
-            state.isEmptySearchResult -> {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    FavoritesEmptySearchState()
-                }
-            }
-        }
-
-        items(
-            items = state.favorites,
-            key = { it.id },
-        ) { favorite ->
-            FavoriteCharacterCard(
-                character = favorite,
-                onClick = { onCharacterClick(favorite.id) },
-                onFavoriteClick = { onFavoriteClick(favorite.id) },
-            )
-        }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .navigationBarsPadding()
+                .padding(end = 20.dp, bottom = 20.dp),
+        )
     }
 }
 
