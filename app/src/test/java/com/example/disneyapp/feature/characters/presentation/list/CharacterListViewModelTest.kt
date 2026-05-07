@@ -10,6 +10,7 @@ import com.example.disneyapp.core.domain.DataError
 import com.example.disneyapp.core.domain.Result
 import com.example.disneyapp.core.presentation.toUiText
 import com.example.disneyapp.feature.characters.FakeFavoriteCharacterLocalDataSource
+import com.example.disneyapp.feature.characters.domain.model.CharacterDetail
 import com.example.disneyapp.feature.characters.domain.model.CharacterPage
 import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
 import com.example.disneyapp.feature.characters.domain.repository.CharacterRepository
@@ -430,6 +431,30 @@ class CharacterListViewModelTest {
         )
     }
 
+    @Test
+    fun `cached initial load emits snackbar and displays characters`() = runTest(testDispatcher) {
+        val repository = FakeCharacterRepository(
+            getCharactersResult = Result.Success(
+                characterPage(listOf(mickey)).copy(isFromCache = true),
+            ),
+        )
+        val viewModel = createViewModel(repository)
+
+        viewModel.events.test {
+            advanceUntilIdle()
+
+            val event = awaitItem()
+            assertThat(event).isEqualTo(
+                CharacterListEvent.ShowSnackbar(
+                    com.example.disneyapp.core.presentation.UiText.DynamicString(
+                        "Showing saved characters.",
+                    )
+                )
+            )
+        }
+        assertThat(viewModel.state.value.characters).containsExactly(mickeyListItem)
+    }
+
     private fun createViewModel(
         repository: CharacterRepository,
         favoriteLocalDataSource: FakeFavoriteCharacterLocalDataSource = FakeFavoriteCharacterLocalDataSource(),
@@ -445,7 +470,7 @@ class CharacterListViewModelTest {
 private class FakeCharacterRepository(
     var getCharactersResult: Result<CharacterPage, DataError.Network> =
         Result.Success(characterPage(emptyList())),
-    private val getCharacterResult: Result<DisneyCharacter, DataError.Network> =
+    private val getCharacterResult: Result<CharacterDetail, DataError> =
         Result.Failure(DataError.Network.UNKNOWN),
     var searchCharactersResult: Result<CharacterPage, DataError.Network> =
         Result.Success(characterPage(emptyList())),
@@ -469,7 +494,7 @@ private class FakeCharacterRepository(
         return getCharactersRequest(page, pageSize)
     }
 
-    override suspend fun getCharacter(id: Int): Result<DisneyCharacter, DataError.Network> =
+    override suspend fun getCharacter(id: Int): Result<CharacterDetail, DataError> =
         getCharacterResult
 
     override suspend fun searchCharacters(

@@ -12,7 +12,7 @@ class SearchCharactersUseCase(
         query: String,
         page: Int,
         pageSize: Int,
-    ): Result<CharacterPage, DataError.Network> {
+    ): Result<CharacterPage, DataError> {
         val trimmedQuery = query.trim()
 
         if (trimmedQuery.isBlank()) {

@@ -3,10 +3,12 @@ package com.example.disneyapp.di
 import androidx.room.Room
 import com.example.disneyapp.core.data.local.DisneyAppDatabase
 import com.example.disneyapp.core.data.network.HttpClientFactory
+import com.example.disneyapp.feature.characters.data.local.RoomCharacterLocalDataSource
 import com.example.disneyapp.feature.characters.data.local.RoomFavoriteCharacterLocalDataSource
 import com.example.disneyapp.feature.characters.data.remote.CharacterRemoteDataSource
 import com.example.disneyapp.feature.characters.data.remote.KtorCharacterRemoteDataSource
-import com.example.disneyapp.feature.characters.data.repository.NetworkCharacterRepository
+import com.example.disneyapp.feature.characters.data.repository.OfflineFirstCharacterRepository
+import com.example.disneyapp.feature.characters.domain.CharacterLocalDataSource
 import com.example.disneyapp.feature.characters.domain.FavoriteCharacterLocalDataSource
 import com.example.disneyapp.feature.characters.domain.repository.CharacterRepository
 import com.example.disneyapp.feature.characters.domain.usecase.GetCharacterDetailUseCase
@@ -38,11 +40,13 @@ val coreDataModule = module {
         ).build()
     }
     single { get<DisneyAppDatabase>().favoriteCharacterDao() }
+    single { get<DisneyAppDatabase>().characterCacheDao() }
 }
 
 val charactersDataModule = module {
     singleOf(::KtorCharacterRemoteDataSource) { bind<CharacterRemoteDataSource>() }
-    singleOf(::NetworkCharacterRepository) { bind<CharacterRepository>() }
+    singleOf(::RoomCharacterLocalDataSource) { bind<CharacterLocalDataSource>() }
+    singleOf(::OfflineFirstCharacterRepository) { bind<CharacterRepository>() }
     singleOf(::RoomFavoriteCharacterLocalDataSource) { bind<FavoriteCharacterLocalDataSource>() }
 }
 

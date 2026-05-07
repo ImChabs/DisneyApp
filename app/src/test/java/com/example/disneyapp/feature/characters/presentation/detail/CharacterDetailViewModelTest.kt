@@ -1,5 +1,6 @@
 package com.example.disneyapp.feature.characters.presentation.detail
 
+import app.cash.turbine.test
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isEqualTo
@@ -9,6 +10,7 @@ import com.example.disneyapp.core.domain.DataError
 import com.example.disneyapp.core.domain.Result
 import com.example.disneyapp.core.presentation.toUiText
 import com.example.disneyapp.feature.characters.FakeFavoriteCharacterLocalDataSource
+import com.example.disneyapp.feature.characters.domain.model.CharacterDetail
 import com.example.disneyapp.feature.characters.domain.model.CharacterPage
 import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
 import com.example.disneyapp.feature.characters.domain.repository.CharacterRepository
@@ -44,7 +46,7 @@ class CharacterDetailViewModelTest {
 
     @Test
     fun `initial load shows loading then character detail`() = runTest(testDispatcher) {
-        val pendingResult = CompletableDeferred<Result<DisneyCharacter, DataError.Network>>()
+        val pendingResult = CompletableDeferred<Result<CharacterDetail, DataError>>()
         val repository = FakeCharacterRepository(
             getCharacterRequest = { pendingResult.await() },
         )
@@ -53,7 +55,7 @@ class CharacterDetailViewModelTest {
         runCurrent()
         assertThat(viewModel.state.value.isLoading).isTrue()
 
-        pendingResult.complete(Result.Success(mickey))
+        pendingResult.complete(Result.Success(CharacterDetail(mickey)))
         advanceUntilIdle()
 
         assertThat(repository.requestedCharacterIds).containsExactly(4703)
@@ -89,7 +91,7 @@ class CharacterDetailViewModelTest {
         val viewModel = createViewModel(repository)
         advanceUntilIdle()
 
-        repository.getCharacterResult = Result.Success(mickey)
+        repository.getCharacterResult = Result.Success(CharacterDetail(mickey))
         viewModel.onAction(CharacterDetailAction.OnRetryClick)
         advanceUntilIdle()
 
@@ -102,7 +104,7 @@ class CharacterDetailViewModelTest {
     @Test
     fun `missing fields produce safe detail ui`() = runTest(testDispatcher) {
         val repository = FakeCharacterRepository(
-            getCharacterResult = Result.Success(emptyCharacter),
+            getCharacterResult = Result.Success(CharacterDetail(emptyCharacter)),
         )
         val viewModel = createViewModel(repository)
 
@@ -123,7 +125,7 @@ class CharacterDetailViewModelTest {
     @Test
     fun `favorite state marks loaded detail as favorite`() = runTest(testDispatcher) {
         val repository = FakeCharacterRepository(
-            getCharacterResult = Result.Success(mickey),
+            getCharacterResult = Result.Success(CharacterDetail(mickey)),
         )
         val favorites = FakeFavoriteCharacterLocalDataSource(initialFavorites = listOf(mickey))
         val viewModel = createViewModel(repository, favorites)
@@ -136,7 +138,7 @@ class CharacterDetailViewModelTest {
     @Test
     fun `favorite click saves loaded character`() = runTest(testDispatcher) {
         val repository = FakeCharacterRepository(
-            getCharacterResult = Result.Success(mickey),
+            getCharacterResult = Result.Success(CharacterDetail(mickey)),
         )
         val favorites = FakeFavoriteCharacterLocalDataSource()
         val viewModel = createViewModel(repository, favorites)
@@ -147,6 +149,28 @@ class CharacterDetailViewModelTest {
 
         assertThat(favorites.savedFavorites).containsExactly(mickey)
         assertThat(viewModel.state.value.character).isEqualTo(mickeyDetail.copy(isFavorite = true))
+    }
+
+    @Test
+    fun `cached detail emits snackbar and displays character`() = runTest(testDispatcher) {
+        val repository = FakeCharacterRepository(
+            getCharacterResult = Result.Success(CharacterDetail(mickey, isFromCache = true)),
+        )
+        val viewModel = createViewModel(repository)
+
+        viewModel.events.test {
+            advanceUntilIdle()
+
+            val event = awaitItem()
+            assertThat(event).isEqualTo(
+                CharacterDetailEvent.ShowSnackbar(
+                    com.example.disneyapp.core.presentation.UiText.DynamicString(
+                        "Showing saved character.",
+                    )
+                )
+            )
+        }
+        assertThat(viewModel.state.value.character).isEqualTo(mickeyDetail)
     }
 
     private fun createViewModel(
@@ -162,19 +186,19 @@ class CharacterDetailViewModelTest {
 }
 
 private class FakeCharacterRepository(
-    var getCharacterResult: Result<DisneyCharacter, DataError.Network> =
-        Result.Success(mickey),
-    var getCharacterRequest: (suspend (Int) -> Result<DisneyCharacter, DataError.Network>)? = null,
+    var getCharacterResult: Result<CharacterDetail, DataError> =
+        Result.Success(CharacterDetail(mickey)),
+    var getCharacterRequest: (suspend (Int) -> Result<CharacterDetail, DataError>)? = null,
 ) : CharacterRepository {
     val requestedCharacterIds = mutableListOf<Int>()
 
     override suspend fun getCharacters(
         page: Int,
         pageSize: Int,
-    ): Result<CharacterPage, DataError.Network> =
+    ): Result<CharacterPage, DataError> =
         Result.Failure(DataError.Network.UNKNOWN)
 
-    override suspend fun getCharacter(id: Int): Result<DisneyCharacter, DataError.Network> {
+    override suspend fun getCharacter(id: Int): Result<CharacterDetail, DataError> {
         requestedCharacterIds.add(id)
         return getCharacterRequest?.invoke(id) ?: getCharacterResult
     }
@@ -183,7 +207,7 @@ private class FakeCharacterRepository(
         name: String,
         page: Int,
         pageSize: Int,
-    ): Result<CharacterPage, DataError.Network> =
+    ): Result<CharacterPage, DataError> =
         Result.Failure(DataError.Network.UNKNOWN)
 }
 
