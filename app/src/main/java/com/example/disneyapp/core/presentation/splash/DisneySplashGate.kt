@@ -2,6 +2,7 @@ package com.example.disneyapp.core.presentation.splash
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +30,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -55,7 +58,9 @@ fun DisneySplashGate(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        content()
+        if (!isSplashVisible) {
+            content()
+        }
         AnimatedVisibility(
             visible = isSplashVisible,
             enter = fadeIn(animationSpec = tween(durationMillis = SplashEnterMillis)),
@@ -75,7 +80,7 @@ private fun DisneySplashScreen(
         isLogoVisible = true
     }
 
-    val logoAlpha by animateFloatAsState(
+    val logoAlpha = animateFloatAsState(
         targetValue = if (isLogoVisible) 1f else 0f,
         animationSpec = tween(
             durationMillis = LogoEnterMillis,
@@ -83,7 +88,7 @@ private fun DisneySplashScreen(
         ),
         label = "splashLogoAlpha",
     )
-    val logoScale by animateFloatAsState(
+    val logoScale = animateFloatAsState(
         targetValue = if (isLogoVisible) 1f else 0.92f,
         animationSpec = tween(
             durationMillis = LogoEnterMillis,
@@ -93,7 +98,7 @@ private fun DisneySplashScreen(
     )
 
     val infiniteTransition = rememberInfiniteTransition(label = "splashTransition")
-    val starPulse by infiniteTransition.animateFloat(
+    val starPulse = infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -102,12 +107,11 @@ private fun DisneySplashScreen(
         ),
         label = "splashStarPulse",
     )
-    val dustProgress by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = DustSweepMillis, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart,
+    val dustProgress = animateFloatAsState(
+        targetValue = if (isLogoVisible) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = DustSweepMillis,
+            easing = LinearEasing,
         ),
         label = "splashDustProgress",
     )
@@ -130,9 +134,9 @@ private fun DisneySplashScreen(
                 .widthIn(max = 430.dp)
                 .fillMaxWidth()
                 .graphicsLayer {
-                    alpha = logoAlpha
-                    scaleX = logoScale
-                    scaleY = logoScale
+                    alpha = logoAlpha.value
+                    scaleX = logoScale.value
+                    scaleY = logoScale.value
                 },
         ) {
             Image(
@@ -153,81 +157,117 @@ private fun DisneySplashScreen(
 
 @Composable
 private fun SplashNightSky(
-    starPulse: Float,
-    dustProgress: Float,
+    starPulse: State<Float>,
+    dustProgress: State<Float>,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier) {
+        StaticNightSky(modifier = Modifier.fillMaxSize())
+        PulsingStars(
+            starPulse = starPulse,
+            modifier = Modifier.fillMaxSize(),
+        )
+        SparkleDust(
+            dustProgress = dustProgress,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+@Composable
+private fun StaticNightSky(
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.drawWithCache {
+            val stars = SplashStarFractions.mapIndexed { index, fraction ->
+                val radius = when {
+                    index % 6 == 0 -> 1.9.dp.toPx()
+                    index % 3 == 0 -> 1.45.dp.toPx()
+                    else -> 1.05.dp.toPx()
+                }
+                val alpha = when {
+                    index % 6 == 0 -> 0.58f
+                    index % 2 == 0 -> 0.42f
+                    else -> 0.28f
+                }
+                SplashStar(
+                    center = Offset(size.width * fraction.x, size.height * fraction.y),
+                    radius = radius,
+                    alpha = alpha,
+                )
+            }
+
+            onDrawBehind {
+                stars.forEach { star ->
+                    drawCircle(
+                        color = Color.White.copy(alpha = star.alpha),
+                        radius = star.radius,
+                        center = star.center,
+                    )
+                }
+
+                drawCircle(
+                    color = DisneyColors.BlueGlow.copy(alpha = 0.18f),
+                    radius = size.minDimension * 0.42f,
+                    center = Offset(size.width * 0.96f, size.height * 0.08f),
+                )
+                drawCircle(
+                    color = DisneyColors.MagentaGlow.copy(alpha = 0.12f),
+                    radius = size.minDimension * 0.36f,
+                    center = Offset(size.width * 0.10f, size.height * 0.86f),
+                )
+                drawCircle(
+                    color = DisneyColors.Gold.copy(alpha = 0.14f),
+                    radius = 3.dp.toPx(),
+                    center = Offset(size.width * 0.76f, size.height * 0.34f),
+                )
+            }
+        },
+    )
+}
+
+@Composable
+private fun PulsingStars(
+    starPulse: State<Float>,
     modifier: Modifier = Modifier,
 ) {
     Canvas(modifier = modifier) {
-        val stars = listOf(
-            Offset(size.width * 0.08f, size.height * 0.12f),
-            Offset(size.width * 0.18f, size.height * 0.28f),
-            Offset(size.width * 0.28f, size.height * 0.08f),
-            Offset(size.width * 0.38f, size.height * 0.22f),
-            Offset(size.width * 0.48f, size.height * 0.12f),
-            Offset(size.width * 0.58f, size.height * 0.30f),
-            Offset(size.width * 0.68f, size.height * 0.10f),
-            Offset(size.width * 0.80f, size.height * 0.24f),
-            Offset(size.width * 0.92f, size.height * 0.14f),
-            Offset(size.width * 0.12f, size.height * 0.44f),
-            Offset(size.width * 0.26f, size.height * 0.54f),
-            Offset(size.width * 0.42f, size.height * 0.40f),
-            Offset(size.width * 0.54f, size.height * 0.58f),
-            Offset(size.width * 0.70f, size.height * 0.46f),
-            Offset(size.width * 0.86f, size.height * 0.56f),
-            Offset(size.width * 0.18f, size.height * 0.72f),
-            Offset(size.width * 0.34f, size.height * 0.84f),
-            Offset(size.width * 0.50f, size.height * 0.76f),
-            Offset(size.width * 0.66f, size.height * 0.88f),
-            Offset(size.width * 0.82f, size.height * 0.78f),
-            Offset(size.width * 0.94f, size.height * 0.90f),
-        )
+        SplashStarFractions.forEachIndexed { index, fraction ->
+            if (index % 3 != 0) return@forEachIndexed
 
-        stars.forEachIndexed { index, offset ->
-            val baseAlpha = when {
-                index % 6 == 0 -> 0.58f
-                index % 2 == 0 -> 0.42f
-                else -> 0.28f
-            }
-            val pulse = if (index % 3 == 0) starPulse * 0.18f else 0f
+            val pulse = starPulse.value * 0.18f
             val radius = when {
                 index % 6 == 0 -> 1.9.dp.toPx()
-                index % 3 == 0 -> 1.45.dp.toPx()
-                else -> 1.05.dp.toPx()
+                else -> 1.45.dp.toPx()
             }
             drawCircle(
-                color = Color.White.copy(alpha = baseAlpha + pulse),
+                color = Color.White.copy(alpha = pulse),
                 radius = radius,
-                center = offset,
+                center = Offset(size.width * fraction.x, size.height * fraction.y),
             )
         }
+    }
+}
 
-        drawCircle(
-            color = DisneyColors.BlueGlow.copy(alpha = 0.18f),
-            radius = size.minDimension * 0.42f,
-            center = Offset(size.width * 0.96f, size.height * 0.08f),
-        )
-        drawCircle(
-            color = DisneyColors.MagentaGlow.copy(alpha = 0.12f),
-            radius = size.minDimension * 0.36f,
-            center = Offset(size.width * 0.10f, size.height * 0.86f),
-        )
-        drawCircle(
-            color = DisneyColors.Gold.copy(alpha = 0.14f),
-            radius = 3.dp.toPx(),
-            center = Offset(size.width * 0.76f, size.height * 0.34f),
-        )
-
+@Composable
+private fun SparkleDust(
+    dustProgress: State<Float>,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(modifier = modifier) {
+        val progress = dustProgress.value
         val head = Offset(
-            x = size.width * (-0.12f + 1.24f * dustProgress),
-            y = size.height * (0.48f - 0.24f * sin(dustProgress * PI).toFloat()),
+            x = size.width * (-0.12f + 1.24f * progress),
+            y = size.height * (0.48f - 0.24f * sin(progress * PI).toFloat()),
         )
-        repeat(18) { index ->
-            val trailProgress = (dustProgress - index * 0.018f).coerceIn(0f, 1f)
+        repeat(SparkleTrailCount) { index ->
+            val trailProgress = (progress - index * SparkleTrailProgressStep).coerceIn(0f, 1f)
             val trail = Offset(
                 x = size.width * (-0.12f + 1.24f * trailProgress),
                 y = size.height * (0.48f - 0.24f * sin(trailProgress * PI).toFloat()),
             )
-            val alpha = ((18 - index) / 18f) * 0.32f
+            val alpha = ((SparkleTrailCount - index) / SparkleTrailCount.toFloat()) * 0.32f
             drawCircle(
                 color = DisneyColors.Gold.copy(alpha = alpha),
                 radius = (2.4f - index * 0.08f).dp.toPx(),
@@ -242,12 +282,44 @@ private fun SplashNightSky(
     }
 }
 
+private data class SplashStar(
+    val center: Offset,
+    val radius: Float,
+    val alpha: Float,
+)
+
 private const val SplashDurationMillis = 2_340L
 private const val SplashEnterMillis = 286
 private const val SplashExitMillis = 416
 private const val LogoEnterMillis = 910
 private const val StarPulseMillis = 2_080
 private const val DustSweepMillis = 2_210
+private const val SparkleTrailCount = 18
+private const val SparkleTrailProgressStep = 0.018f
+
+private val SplashStarFractions = listOf(
+    Offset(0.08f, 0.12f),
+    Offset(0.18f, 0.28f),
+    Offset(0.28f, 0.08f),
+    Offset(0.38f, 0.22f),
+    Offset(0.48f, 0.12f),
+    Offset(0.58f, 0.30f),
+    Offset(0.68f, 0.10f),
+    Offset(0.80f, 0.24f),
+    Offset(0.92f, 0.14f),
+    Offset(0.12f, 0.44f),
+    Offset(0.26f, 0.54f),
+    Offset(0.42f, 0.40f),
+    Offset(0.54f, 0.58f),
+    Offset(0.70f, 0.46f),
+    Offset(0.86f, 0.56f),
+    Offset(0.18f, 0.72f),
+    Offset(0.34f, 0.84f),
+    Offset(0.50f, 0.76f),
+    Offset(0.66f, 0.88f),
+    Offset(0.82f, 0.78f),
+    Offset(0.94f, 0.90f),
+)
 
 @Preview(showBackground = true)
 @Composable
