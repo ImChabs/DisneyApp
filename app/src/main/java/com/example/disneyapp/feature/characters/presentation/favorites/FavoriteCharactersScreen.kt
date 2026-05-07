@@ -1,6 +1,7 @@
 package com.example.disneyapp.feature.characters.presentation.favorites
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -53,6 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
+import com.example.disneyapp.feature.characters.presentation.components.PremiumStatePanel
 import com.example.disneyapp.feature.characters.presentation.list.CharacterListItemUi
 import com.example.disneyapp.ui.theme.DisneyAppTheme
 import org.koin.compose.viewmodel.koinViewModel
@@ -314,44 +317,12 @@ private fun FavoriteCharacterImage(
 
 @Composable
 private fun FavoritesEmptyState(modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 2.dp,
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 22.dp, vertical = 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Favorite,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
-            Text(
-                text = stringResource(R.string.favorites_empty_title),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = stringResource(R.string.favorites_empty_message),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
+    PremiumStatePanel(
+        title = stringResource(R.string.favorites_empty_title),
+        message = stringResource(R.string.favorites_empty_message),
+        icon = Icons.Filled.Favorite,
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -369,6 +340,72 @@ private fun FavoriteCharactersBackground(modifier: Modifier = Modifier) {
                 ),
             ),
     )
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val stars = listOf(
+            Offset(size.width * 0.08f, size.height * 0.12f),
+            Offset(size.width * 0.18f, size.height * 0.28f),
+            Offset(size.width * 0.28f, size.height * 0.08f),
+            Offset(size.width * 0.38f, size.height * 0.22f),
+            Offset(size.width * 0.48f, size.height * 0.12f),
+            Offset(size.width * 0.58f, size.height * 0.30f),
+            Offset(size.width * 0.68f, size.height * 0.10f),
+            Offset(size.width * 0.80f, size.height * 0.24f),
+            Offset(size.width * 0.92f, size.height * 0.14f),
+            Offset(size.width * 0.12f, size.height * 0.44f),
+            Offset(size.width * 0.26f, size.height * 0.54f),
+            Offset(size.width * 0.42f, size.height * 0.40f),
+            Offset(size.width * 0.54f, size.height * 0.58f),
+            Offset(size.width * 0.70f, size.height * 0.46f),
+            Offset(size.width * 0.86f, size.height * 0.56f),
+            Offset(size.width * 0.18f, size.height * 0.72f),
+            Offset(size.width * 0.34f, size.height * 0.84f),
+            Offset(size.width * 0.50f, size.height * 0.76f),
+            Offset(size.width * 0.66f, size.height * 0.88f),
+            Offset(size.width * 0.82f, size.height * 0.78f),
+            Offset(size.width * 0.94f, size.height * 0.90f),
+        )
+
+        stars.forEachIndexed { index, offset ->
+            val radius = when {
+                index % 6 == 0 -> 1.9.dp.toPx()
+                index % 3 == 0 -> 1.45.dp.toPx()
+                else -> 1.05.dp.toPx()
+            }
+            val alpha = when {
+                index % 6 == 0 -> 0.58f
+                index % 2 == 0 -> 0.42f
+                else -> 0.28f
+            }
+            drawCircle(
+                color = Color.White.copy(alpha = alpha),
+                radius = radius,
+                center = offset,
+            )
+        }
+        drawCircle(
+            color = Color(0xFFFFD782).copy(alpha = 0.18f),
+            radius = 2.8.dp.toPx(),
+            center = Offset(size.width * 0.76f, size.height * 0.34f),
+        )
+        drawCircle(
+            color = Color(0xFFBDA8FF).copy(alpha = 0.16f),
+            radius = 3.2.dp.toPx(),
+            center = Offset(size.width * 0.24f, size.height * 0.64f),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun FavoriteCharactersEmptyPreview() {
+    DisneyAppTheme(dynamicColor = false) {
+        FavoriteCharactersScreen(
+            state = FavoriteCharactersState(),
+            onAction = {},
+            onBackClick = {},
+            onCharacterClick = {},
+        )
+    }
 }
 
 @Preview(showBackground = true)

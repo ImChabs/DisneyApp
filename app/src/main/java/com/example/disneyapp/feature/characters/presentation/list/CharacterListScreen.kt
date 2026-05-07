@@ -28,7 +28,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -71,6 +73,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
+import com.example.disneyapp.feature.characters.presentation.components.PremiumStatePanel
 import com.example.disneyapp.ui.theme.DisneyAppTheme
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.koin.compose.viewmodel.koinViewModel
@@ -408,6 +411,7 @@ private fun CharacterCatalogContent(
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     CharacterListErrorState(
                         message = errorMessage,
+                        isLoading = state.isLoading,
                         onRetryClick = onRetryClick,
                     )
                 }
@@ -979,15 +983,39 @@ private fun LoadingCatalogPlaceholder(
 @Composable
 private fun CharacterListErrorState(
     message: String,
+    isLoading: Boolean,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    StatePanel(
+    PremiumStatePanel(
         title = stringResource(R.string.characters_error_title),
         message = message,
+        icon = Icons.Outlined.CloudOff,
         action = {
-            Button(onClick = onRetryClick) {
-                Text(text = stringResource(R.string.characters_retry))
+            Button(
+                onClick = onRetryClick,
+                enabled = !isLoading,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFFD782),
+                    contentColor = Color(0xFF101A35),
+                    disabledContainerColor = Color(0xFFFFD782).copy(alpha = 0.74f),
+                    disabledContentColor = Color(0xFF101A35).copy(alpha = 0.74f),
+                ),
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = Color(0xFF101A35),
+                        )
+                        Spacer(modifier = Modifier.size(8.dp))
+                    }
+                    Text(text = stringResource(R.string.characters_retry))
+                }
             }
         },
         modifier = modifier,
@@ -1000,7 +1028,7 @@ private fun CharacterListEmptyState(
     modifier: Modifier = Modifier,
 ) {
     val hasSearch = searchQuery.isNotBlank()
-    StatePanel(
+    PremiumStatePanel(
         title = if (hasSearch) {
             stringResource(R.string.characters_empty_search_title)
         } else {
@@ -1013,51 +1041,6 @@ private fun CharacterListEmptyState(
         },
         modifier = modifier,
     )
-}
-
-@Composable
-private fun StatePanel(
-    title: String,
-    message: String,
-    modifier: Modifier = Modifier,
-    action: (@Composable () -> Unit)? = null,
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 2.dp,
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 22.dp, vertical = 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-            )
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            if (action != null) {
-                Spacer(modifier = Modifier.height(2.dp))
-                action()
-            }
-        }
-    }
 }
 
 private const val LOAD_MORE_ITEM_THRESHOLD = 6
