@@ -9,11 +9,14 @@ import assertk.assertions.isTrue
 import com.example.disneyapp.core.domain.DataError
 import com.example.disneyapp.core.domain.Result
 import com.example.disneyapp.core.presentation.toUiText
+import com.example.disneyapp.feature.characters.FakeFavoriteCharacterLocalDataSource
 import com.example.disneyapp.feature.characters.domain.model.CharacterPage
 import com.example.disneyapp.feature.characters.domain.model.DisneyCharacter
 import com.example.disneyapp.feature.characters.domain.repository.CharacterRepository
 import com.example.disneyapp.feature.characters.domain.usecase.GetCharactersUseCase
+import com.example.disneyapp.feature.characters.domain.usecase.ObserveFavoriteCharacterIdsUseCase
 import com.example.disneyapp.feature.characters.domain.usecase.SearchCharactersUseCase
+import com.example.disneyapp.feature.characters.domain.usecase.ToggleFavoriteCharacterUseCase
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -393,12 +396,49 @@ class CharacterListViewModelTest {
         )
     }
 
+    @Test
+    fun `favorite ids mark loaded characters as favorites`() = runTest(testDispatcher) {
+        val repository = FakeCharacterRepository(
+            getCharactersResult = Result.Success(characterPage(listOf(mickey, minnie))),
+        )
+        val favorites = FakeFavoriteCharacterLocalDataSource(initialFavorites = listOf(mickey))
+        val viewModel = createViewModel(repository, favorites)
+
+        advanceUntilIdle()
+
+        assertThat(viewModel.state.value.characters).containsExactly(
+            mickeyListItem.copy(isFavorite = true),
+            minnieListItem,
+        )
+    }
+
+    @Test
+    fun `favorite click saves loaded character snapshot`() = runTest(testDispatcher) {
+        val repository = FakeCharacterRepository(
+            getCharactersResult = Result.Success(characterPage(listOf(mickey))),
+        )
+        val favorites = FakeFavoriteCharacterLocalDataSource()
+        val viewModel = createViewModel(repository, favorites)
+        advanceUntilIdle()
+
+        viewModel.onAction(CharacterListAction.OnFavoriteClick(4703))
+        advanceUntilIdle()
+
+        assertThat(favorites.savedFavorites).containsExactly(mickey)
+        assertThat(viewModel.state.value.characters).containsExactly(
+            mickeyListItem.copy(isFavorite = true),
+        )
+    }
+
     private fun createViewModel(
         repository: CharacterRepository,
+        favoriteLocalDataSource: FakeFavoriteCharacterLocalDataSource = FakeFavoriteCharacterLocalDataSource(),
     ): CharacterListViewModel =
         CharacterListViewModel(
             getCharactersUseCase = GetCharactersUseCase(repository),
             searchCharactersUseCase = SearchCharactersUseCase(repository),
+            observeFavoriteCharacterIdsUseCase = ObserveFavoriteCharacterIdsUseCase(favoriteLocalDataSource),
+            toggleFavoriteCharacterUseCase = ToggleFavoriteCharacterUseCase(favoriteLocalDataSource),
         )
 }
 

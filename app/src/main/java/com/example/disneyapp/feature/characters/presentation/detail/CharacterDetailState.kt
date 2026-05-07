@@ -19,6 +19,7 @@ data class CharacterDetailUi(
     val imageUrl: String?,
     val metadataBadges: List<String>,
     val sections: List<CharacterDetailSectionUi>,
+    val isFavorite: Boolean = false,
 ) {
     val hasProfileData: Boolean
         get() = sections.isNotEmpty()
@@ -30,7 +31,7 @@ data class CharacterDetailSectionUi(
     val items: List<String>,
 )
 
-fun DisneyCharacter.toCharacterDetailUi(): CharacterDetailUi =
+fun DisneyCharacter.toCharacterDetailUi(isFavorite: Boolean = false): CharacterDetailUi =
     CharacterDetailUi(
         id = id,
         name = name?.takeIf { it.isNotBlank() } ?: "Unknown character",
@@ -38,6 +39,7 @@ fun DisneyCharacter.toCharacterDetailUi(): CharacterDetailUi =
         imageUrl = imageUrl?.takeIf { it.isNotBlank() },
         metadataBadges = buildDetailBadges(),
         sections = buildDetailSections(),
+        isFavorite = isFavorite,
     )
 
 private fun DisneyCharacter.buildDetailSections(): List<CharacterDetailSectionUi> =
