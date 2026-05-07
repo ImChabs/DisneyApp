@@ -16,6 +16,7 @@ data class CharacterDto(
     val enemies: List<String>? = null,
     val sourceUrl: String? = null,
     val name: String? = null,
+    val alignment: String? = null,
     val imageUrl: String? = null,
     val url: String? = null,
 )

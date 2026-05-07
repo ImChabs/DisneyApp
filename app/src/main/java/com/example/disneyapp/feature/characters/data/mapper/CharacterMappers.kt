@@ -7,6 +7,7 @@ fun CharacterDto.toDisneyCharacter(): DisneyCharacter =
     DisneyCharacter(
         id = id ?: 0,
         name = name,
+        alignment = alignment,
         imageUrl = imageUrl,
         sourceUrl = sourceUrl,
         apiUrl = url,

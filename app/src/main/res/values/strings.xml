@@ -16,4 +16,12 @@
     <string name="characters_empty_message">Characters will appear here when the catalog returns results.</string>
     <string name="characters_empty_search_title">No matching characters</string>
     <string name="characters_empty_search_message">Try another name or clear the search field.</string>
+    <string name="character_detail_title">Character detail</string>
+    <string name="character_detail_loading">Loading character profile</string>
+    <string name="character_detail_error_title">Could not load character</string>
+    <string name="character_detail_empty_title">No profile details yet</string>
+    <string name="character_detail_empty_message">This character does not include films, shows, games, parks, allies, or enemies in the Disney catalog.</string>
+    <string name="character_detail_badge_profile">Profile</string>
+    <string name="character_detail_image_content_description">%1$s character portrait</string>
+    <string name="character_detail_back_content_description">Go back</string>
 </resources>

@@ -14,6 +14,7 @@ class CharacterMappersTest {
 
         assertThat(character.id).isEqualTo(0)
         assertThat(character.name).isNull()
+        assertThat(character.alignment).isNull()
         assertThat(character.imageUrl).isNull()
         assertThat(character.films).isEmpty()
         assertThat(character.shortFilms).isEmpty()
@@ -37,12 +38,14 @@ class CharacterMappersTest {
             enemies = listOf("Pete"),
             sourceUrl = "https://disney.fandom.com/wiki/Mickey_Mouse",
             name = "Mickey Mouse",
+            alignment = "Good",
             imageUrl = "https://example.com/mickey.jpg",
             url = "https://api.disneyapi.dev/characters/4703",
         ).toDisneyCharacter()
 
         assertThat(character.id).isEqualTo(4703)
         assertThat(character.name).isEqualTo("Mickey Mouse")
+        assertThat(character.alignment).isEqualTo("Good")
         assertThat(character.imageUrl).isEqualTo("https://example.com/mickey.jpg")
         assertThat(character.sourceUrl).isEqualTo("https://disney.fandom.com/wiki/Mickey_Mouse")
         assertThat(character.apiUrl).isEqualTo("https://api.disneyapi.dev/characters/4703")

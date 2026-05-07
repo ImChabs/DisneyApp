@@ -416,7 +416,13 @@ private fun CharacterCatalogHeader(
         )
         Box(modifier = Modifier.height(4.dp)) {
             if (isLoading) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(999.dp)),
+                    color = Color(0xFFFFD782),
+                    trackColor = Color.White.copy(alpha = 0.12f),
+                )
             }
         }
         CharacterFilterChips()
@@ -750,15 +756,136 @@ private fun LoadingCharacterRow(modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         repeat(3) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .aspectRatio(0.78f)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-            )
+            LoadingCharacterCard(modifier = Modifier.weight(1f))
         }
     }
+}
+
+@Composable
+private fun LoadingCharacterCard(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(0.78f),
+        shape = RoundedCornerShape(24.dp),
+        color = Color.Transparent,
+        shadowElevation = 3.dp,
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
+    ) {
+        Box(
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF172E66).copy(alpha = 0.94f),
+                            Color(0xFF3F347F).copy(alpha = 0.9f),
+                            Color(0xFF7A4B9A).copy(alpha = 0.78f),
+                            Color(0xFFC08A3A).copy(alpha = 0.72f),
+                        ),
+                    ),
+                ),
+        ) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 34.dp, y = (-36).dp)
+                    .size(108.dp)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.2f),
+                                Color.Transparent,
+                            ),
+                        ),
+                        shape = CircleShape,
+                    ),
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .offset(x = (-42).dp)
+                    .size(116.dp)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFFC7B8FF).copy(alpha = 0.22f),
+                                Color.Transparent,
+                            ),
+                        ),
+                        shape = CircleShape,
+                    ),
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.08f),
+                                Color.Black.copy(alpha = 0.64f),
+                            ),
+                        ),
+                    ),
+            )
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(58.dp),
+                shape = CircleShape,
+                color = Color.White.copy(alpha = 0.2f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.3f)),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFFFD782).copy(alpha = 0.54f)),
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+
+
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    LoadingCatalogPlaceholder(
+                        modifier = Modifier.weight(1f),
+                        height = 20,
+                        radius = 999,
+                        alpha = 0.17f,
+                    )
+                    LoadingCatalogPlaceholder(
+                        modifier = Modifier.weight(0.5f),
+                        height = 20,
+                        radius = 999,
+                        alpha = 0.13f,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoadingCatalogPlaceholder(
+    modifier: Modifier = Modifier,
+    height: Int,
+    radius: Int = 9,
+    alpha: Float = 0.16f,
+) {
+    Box(
+        modifier = modifier
+            .height(height.dp)
+            .clip(RoundedCornerShape(radius.dp))
+            .background(Color.White.copy(alpha = alpha)),
+    )
 }
 
 @Composable
@@ -886,6 +1013,18 @@ private fun CharacterListEmptyPreview() {
     DisneyAppTheme(dynamicColor = false) {
         CharacterListScreen(
             state = CharacterListState(searchQuery = "Aurora"),
+            onAction = {},
+            onCharacterClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CharacterListLoadingPreview() {
+    DisneyAppTheme(dynamicColor = false) {
+        CharacterListScreen(
+            state = CharacterListState(isLoading = true),
             onAction = {},
             onCharacterClick = {},
         )

@@ -3,6 +3,7 @@ package com.example.disneyapp.feature.characters.domain.model
 data class DisneyCharacter(
     val id: Int,
     val name: String?,
+    val alignment: String?,
     val imageUrl: String?,
     val sourceUrl: String?,
     val apiUrl: String?,

@@ -459,6 +459,7 @@ private fun characterPage(
 private val mickey = DisneyCharacter(
     id = 4703,
     name = "Mickey Mouse",
+    alignment = "Good",
     imageUrl = "https://example.com/mickey.jpg",
     sourceUrl = "https://disney.fandom.com/wiki/Mickey_Mouse",
     apiUrl = "https://api.disneyapi.dev/characters/4703",
@@ -474,6 +475,7 @@ private val mickey = DisneyCharacter(
 private val minnie = DisneyCharacter(
     id = 1949,
     name = "Minnie Mouse",
+    alignment = null,
     imageUrl = null,
     sourceUrl = null,
     apiUrl = "https://api.disneyapi.dev/characters/1949",

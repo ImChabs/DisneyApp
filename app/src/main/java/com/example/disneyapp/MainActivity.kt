@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.disneyapp.feature.characters.presentation.list.CharacterListRoot
 import com.example.disneyapp.ui.theme.DisneyAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -13,7 +12,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DisneyAppTheme {
-                CharacterListRoot()
+                DisneyAppRoot()
             }
         }
     }
