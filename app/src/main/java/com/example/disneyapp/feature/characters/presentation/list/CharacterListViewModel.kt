@@ -35,6 +35,7 @@ class CharacterListViewModel(
     private var requestJob: Job? = null
     private var lastSubmittedQuery: String? = null
     private val loadedCharacters = mutableMapOf<Int, DisneyCharacter>()
+    private var generalCatalogSnapshot: GeneralCatalogSnapshot? = null
     private var favoriteCharacterIds = emptySet<Int>()
 
     init {
@@ -46,6 +47,7 @@ class CharacterListViewModel(
         when (action) {
             is CharacterListAction.OnSearchQueryChange -> onSearchQueryChange(action.query)
             is CharacterListAction.OnFavoriteClick -> toggleFavorite(action.characterId)
+            CharacterListAction.OnResetCatalog -> resetCatalog()
             CharacterListAction.OnRetryClick -> retry()
             CharacterListAction.OnLoadMore -> loadMore()
         }
@@ -55,11 +57,12 @@ class CharacterListViewModel(
         viewModelScope.launch {
             observeFavoriteCharacterIdsUseCase().collect { ids ->
                 favoriteCharacterIds = ids
+                generalCatalogSnapshot = generalCatalogSnapshot?.let { snapshot ->
+                    snapshot.copy(characters = snapshot.characters.markFavorites(ids))
+                }
                 _state.update { state ->
                     state.copy(
-                        characters = state.characters.map { character ->
-                            character.copy(isFavorite = character.id in ids)
-                        },
+                        characters = state.characters.markFavorites(ids),
                     )
                 }
             }
@@ -91,6 +94,38 @@ class CharacterListViewModel(
             loadMore()
         } else {
             submitQuery(query = state.value.searchQuery, force = true)
+        }
+    }
+
+    private fun resetCatalog() {
+        searchDebounceJob?.cancel()
+        requestJob?.cancel()
+        val snapshot = generalCatalogSnapshot
+        val shouldRetry = snapshot == null && state.value.error != null
+        _state.update {
+            if (snapshot != null) {
+                it.copy(
+                    characters = snapshot.characters,
+                    searchQuery = "",
+                    isLoading = false,
+                    isLoadingMore = false,
+                    currentPage = snapshot.currentPage,
+                    canLoadMore = snapshot.canLoadMore,
+                    error = null,
+                )
+            } else {
+                it.copy(
+                    searchQuery = "",
+                    isLoading = false,
+                    isLoadingMore = false,
+                    currentPage = 0,
+                    canLoadMore = false,
+                    error = null,
+                )
+            }
+        }
+        if (shouldRetry) {
+            submitQuery(query = "", force = true)
         }
     }
 
@@ -180,6 +215,13 @@ class CharacterListViewModel(
                         }
                         (it.characters + loadedCharacters).distinctBy { character -> character.id }
                     }
+                    if (query.isBlank()) {
+                        generalCatalogSnapshot = GeneralCatalogSnapshot(
+                            characters = nextCharacters,
+                            currentPage = result.data.currentPage,
+                            canLoadMore = result.data.hasNextPage,
+                        )
+                    }
                     it.copy(
                         characters = nextCharacters,
                         isLoading = false,
@@ -220,3 +262,14 @@ class CharacterListViewModel(
         private val CACHE_MESSAGE = UiText.DynamicString("Showing saved characters.")
     }
 }
+
+private data class GeneralCatalogSnapshot(
+    val characters: List<CharacterListItemUi>,
+    val currentPage: Int,
+    val canLoadMore: Boolean,
+)
+
+private fun List<CharacterListItemUi>.markFavorites(favoriteIds: Set<Int>): List<CharacterListItemUi> =
+    map { character ->
+        character.copy(isFavorite = character.id in favoriteIds)
+    }

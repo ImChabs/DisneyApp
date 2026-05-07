@@ -192,6 +192,66 @@ class CharacterListViewModelTest {
     }
 
     @Test
+    fun `catalog reset clears search and restores general characters without refetching`() = runTest(testDispatcher) {
+        val repository = FakeCharacterRepository(
+            getCharactersResult = Result.Success(characterPage(listOf(mickey))),
+            searchCharactersResult = Result.Success(characterPage(listOf(minnie))),
+        )
+        val viewModel = createViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.onAction(CharacterListAction.OnSearchQueryChange("Minnie"))
+        advanceUntilIdle()
+        viewModel.onAction(CharacterListAction.OnResetCatalog)
+        advanceUntilIdle()
+
+        assertThat(repository.requestedSearchQueries).containsExactly("Minnie")
+        assertThat(repository.requestedCharacterPages).containsExactly(1)
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(
+                characters = listOf(mickeyListItem),
+                currentPage = 1,
+            ),
+        )
+    }
+
+    @Test
+    fun `catalog reset retries first page when initial load failed without characters`() = runTest(testDispatcher) {
+        val repository = FakeCharacterRepository(
+            getCharactersResult = Result.Failure(DataError.Network.NO_INTERNET),
+        )
+        val viewModel = createViewModel(repository)
+        advanceUntilIdle()
+        repository.getCharactersRequest = { _, _ -> Result.Success(characterPage(listOf(mickey))) }
+
+        viewModel.onAction(CharacterListAction.OnResetCatalog)
+        advanceUntilIdle()
+
+        assertThat(repository.requestedCharacterPages).containsExactly(1, 1)
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(
+                characters = listOf(mickeyListItem),
+                currentPage = 1,
+            ),
+        )
+    }
+
+    @Test
+    fun `catalog reset keeps successful empty general list without refetching`() = runTest(testDispatcher) {
+        val repository = FakeCharacterRepository()
+        val viewModel = createViewModel(repository)
+        advanceUntilIdle()
+
+        viewModel.onAction(CharacterListAction.OnResetCatalog)
+        advanceUntilIdle()
+
+        assertThat(repository.requestedCharacterPages).containsExactly(1)
+        assertThat(viewModel.state.value).isEqualTo(
+            CharacterListState(currentPage = 1),
+        )
+    }
+
+    @Test
     fun `search failure preserves previous characters`() = runTest(testDispatcher) {
         val repository = FakeCharacterRepository(
             getCharactersResult = Result.Success(characterPage(listOf(mickey))),
