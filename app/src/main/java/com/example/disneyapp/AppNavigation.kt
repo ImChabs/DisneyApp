@@ -30,6 +30,19 @@ data class CharacterDetailRoute(
 fun DisneyAppRoot() {
     val backStack = rememberNavBackStack(CharacterListRoute)
 
+    fun popToCharacters() {
+        while (backStack.size > 1) {
+            backStack.removeAt(backStack.lastIndex)
+        }
+    }
+
+    fun navigateToFilms() {
+        if (backStack.lastOrNull() == FilmsRoute) return
+
+        popToCharacters()
+        backStack.add(FilmsRoute)
+    }
+
     NavDisplay(
         backStack = backStack,
         entryDecorators = listOf(
@@ -49,18 +62,12 @@ fun DisneyAppRoot() {
                     onFavoritesClick = {
                         backStack.add(FavoriteCharactersRoute)
                     },
-                    onFilmsClick = {
-                        backStack.add(FilmsRoute)
-                    },
+                    onFilmsClick = ::navigateToFilms,
                 )
             }
             entry<FilmsRoute> {
                 FilmsRoot(
-                    onBackClick = {
-                        if (backStack.size > 1) {
-                            backStack.removeAt(backStack.lastIndex)
-                        }
-                    },
+                    onCharactersClick = ::popToCharacters,
                     onCharacterClick = { characterId ->
                         backStack.add(CharacterDetailRoute(characterId = characterId))
                     },

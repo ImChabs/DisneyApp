@@ -4,10 +4,15 @@
     <string name="characters_hero_title">Character Catalog</string>
     <string name="characters_hero_description">Browse Disney characters, search by name, and discover where they appear across stories and parks.</string>
     <string name="characters_search_placeholder">Search characters</string>
-    <string name="characters_filter_all">All</string>
+    <string name="characters_filter_all">Characters</string>
     <string name="characters_filter_films">Films</string>
     <string name="characters_filter_shows">Shows</string>
     <string name="characters_filter_parks">Parks</string>
+    <string name="catalog_section_characters">Characters</string>
+    <string name="catalog_section_films">Films</string>
+    <string name="catalog_section_shows">Shows</string>
+    <string name="catalog_section_parks">Parks</string>
+    <string name="catalog_section_coming_soon">Coming soon</string>
     <string name="characters_badge_profile">Profile</string>
     <string name="characters_image_content_description">%1$s character image</string>
     <string name="characters_favorites_content_description">Open favorites</string>

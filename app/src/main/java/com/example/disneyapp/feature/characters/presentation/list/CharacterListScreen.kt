@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +22,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,9 +33,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -54,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +68,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
+import com.example.disneyapp.feature.catalog.presentation.CatalogSection
+import com.example.disneyapp.feature.catalog.presentation.CatalogSectionSelector
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortrait
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortraitVariant
 import com.example.disneyapp.feature.characters.presentation.components.PremiumStatePanel
@@ -78,6 +77,7 @@ import com.example.disneyapp.ui.theme.DisneyBrushes
 import com.example.disneyapp.ui.theme.DisneyAppTheme
 import com.example.disneyapp.ui.theme.DisneyColors
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -89,7 +89,9 @@ fun CharacterListRoot(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    val comingSoonMessage = stringResource(R.string.catalog_section_coming_soon)
 
     LaunchedEffect(viewModel.events) {
         viewModel.events.collect { event ->
@@ -106,7 +108,17 @@ fun CharacterListRoot(
         onAction = viewModel::onAction,
         onCharacterClick = onCharacterClick,
         onFavoritesClick = onFavoritesClick,
-        onFilmsClick = onFilmsClick,
+        onCatalogSectionClick = { section ->
+            when (section) {
+                CatalogSection.Characters -> Unit
+                CatalogSection.Films -> onFilmsClick()
+                CatalogSection.Shows,
+                CatalogSection.Parks,
+                -> coroutineScope.launch {
+                    snackbarHostState.showSnackbar(comingSoonMessage)
+                }
+            }
+        },
         snackbarHostState = snackbarHostState,
     )
 }
@@ -118,7 +130,7 @@ fun CharacterListScreen(
     onAction: (CharacterListAction) -> Unit,
     onCharacterClick: (Int) -> Unit,
     onFavoritesClick: () -> Unit,
-    onFilmsClick: () -> Unit,
+    onCatalogSectionClick: (CatalogSection) -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
@@ -156,7 +168,7 @@ fun CharacterListScreen(
                 onSearchQueryChange = { onAction(CharacterListAction.OnSearchQueryChange(it)) },
                 onFavoriteClick = { onAction(CharacterListAction.OnFavoriteClick(it)) },
                 onCharacterClick = onCharacterClick,
-                onFilmsClick = onFilmsClick,
+                onCatalogSectionClick = onCatalogSectionClick,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(contentPadding),
@@ -357,7 +369,7 @@ private fun CharacterCatalogContent(
     onSearchQueryChange: (String) -> Unit,
     onFavoriteClick: (Int) -> Unit,
     onCharacterClick: (Int) -> Unit,
-    onFilmsClick: () -> Unit,
+    onCatalogSectionClick: (CatalogSection) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val gridState = rememberLazyGridState()
@@ -400,7 +412,7 @@ private fun CharacterCatalogContent(
                 searchQuery = state.searchQuery,
                 isLoading = state.isLoading,
                 onSearchQueryChange = onSearchQueryChange,
-                onFilmsClick = onFilmsClick,
+                onCatalogSectionClick = onCatalogSectionClick,
             )
         }
 
@@ -455,7 +467,7 @@ private fun CharacterCatalogHeader(
     searchQuery: String,
     isLoading: Boolean,
     onSearchQueryChange: (String) -> Unit,
-    onFilmsClick: () -> Unit,
+    onCatalogSectionClick: (CatalogSection) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -478,7 +490,10 @@ private fun CharacterCatalogHeader(
                 )
             }
         }
-        CharacterFilterChips(onFilmsClick = onFilmsClick)
+        CatalogSectionSelector(
+            selectedSection = CatalogSection.Characters,
+            onSectionClick = onCatalogSectionClick,
+        )
         Spacer(modifier = Modifier.height(2.dp))
     }
 }
@@ -543,94 +558,6 @@ private fun CharacterSearchBar(
             cursorColor = DisneyColors.Gold,
         ),
     )
-}
-
-@Composable
-private fun CharacterFilterChips(
-    onFilmsClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val selectedContainer = DisneyColors.VioletMuted.copy(alpha = 0.88f)
-    val unselectedContainer = DisneyColors.Ink.copy(alpha = 0.54f)
-    val selectedContent = DisneyColors.Gold
-    val unselectedContent = Color.White.copy(alpha = 0.76f)
-    val chipColors = FilterChipDefaults.elevatedFilterChipColors(
-        containerColor = unselectedContainer,
-        labelColor = unselectedContent,
-        iconColor = unselectedContent,
-        selectedContainerColor = selectedContainer,
-        selectedLabelColor = selectedContent,
-        selectedLeadingIconColor = selectedContent,
-    )
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(top = 2.dp)
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        val labels = listOf(
-            stringResource(R.string.characters_filter_all),
-            stringResource(R.string.characters_filter_films),
-            stringResource(R.string.characters_filter_shows),
-            stringResource(R.string.characters_filter_parks),
-        )
-
-        labels.forEachIndexed { index, label ->
-            val selected = index == 0
-
-            ElevatedFilterChip(
-                selected = selected,
-                onClick = {
-                    if (index == FILMS_FILTER_INDEX) {
-                        onFilmsClick()
-                    }
-                },
-                modifier = Modifier.height(36.dp),
-                shape = RoundedCornerShape(22.dp),
-                colors = chipColors,
-                elevation = FilterChipDefaults.elevatedFilterChipElevation(
-                    elevation = 1.dp,
-                    pressedElevation = 2.dp,
-                    focusedElevation = 2.dp,
-                    hoveredElevation = 2.dp,
-                    draggedElevation = 3.dp,
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled = true,
-                    selected = selected,
-                    borderColor = Color.White.copy(alpha = 0.18f),
-                    selectedBorderColor = DisneyColors.Gold.copy(alpha = 0.46f),
-                    borderWidth = 1.dp,
-                    selectedBorderWidth = 1.dp,
-                ),
-                leadingIcon = if (selected) {
-                    {
-                        Box(
-                            modifier = Modifier
-                                .size(7.dp)
-                                .background(
-                                    color = selectedContent,
-                                    shape = CircleShape,
-                                ),
-                        )
-                    }
-                } else {
-                    null
-                },
-                label = {
-                    Text(
-                        text = label,
-                        modifier = Modifier.padding(horizontal = 2.dp),
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-            )
-        }
-    }
 }
 
 @Composable
@@ -996,7 +923,6 @@ private fun CharacterListEmptyState(
 }
 
 private const val LOAD_MORE_ITEM_THRESHOLD = 6
-private const val FILMS_FILTER_INDEX = 1
 
 @Preview(showBackground = true)
 @Composable
@@ -1028,7 +954,7 @@ private fun CharacterListScreenPreview() {
             onAction = {},
             onCharacterClick = {},
             onFavoritesClick = {},
-            onFilmsClick = {},
+            onCatalogSectionClick = {},
         )
     }
 }
@@ -1042,7 +968,7 @@ private fun CharacterListEmptyPreview() {
             onAction = {},
             onCharacterClick = {},
             onFavoritesClick = {},
-            onFilmsClick = {},
+            onCatalogSectionClick = {},
         )
     }
 }
@@ -1056,7 +982,7 @@ private fun CharacterListLoadingPreview() {
             onAction = {},
             onCharacterClick = {},
             onFavoritesClick = {},
-            onFilmsClick = {},
+            onCatalogSectionClick = {},
         )
     }
 }
