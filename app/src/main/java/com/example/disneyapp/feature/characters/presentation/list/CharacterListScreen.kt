@@ -1,7 +1,6 @@
 package com.example.disneyapp.feature.characters.presentation.list
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,21 +30,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,19 +51,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
+import com.example.disneyapp.feature.catalog.presentation.CatalogScaffold
 import com.example.disneyapp.feature.catalog.presentation.CatalogSection
-import com.example.disneyapp.feature.catalog.presentation.CatalogSectionSelector
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortrait
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortraitVariant
 import com.example.disneyapp.feature.characters.presentation.components.PremiumStatePanel
@@ -123,7 +115,6 @@ fun CharacterListRoot(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharacterListScreen(
     state: CharacterListState,
@@ -134,228 +125,22 @@ fun CharacterListScreen(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-    ) {
-        CharacterCatalogBackground()
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = {
-                        CharacterTitleMark()
-                    },
-                    actions = {
-                        FavoritesTopBarButton(onClick = onFavoritesClick)
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent,
-                        titleContentColor = Color.White,
-                    ),
-                )
-            },
-            containerColor = Color.Transparent,
-            snackbarHost = {
-                SnackbarHost(hostState = snackbarHostState)
-            },
-        ) { contentPadding ->
-            CharacterCatalogContent(
-                state = state,
-                errorMessage = state.error?.asString(LocalContext.current),
-                onRetryClick = { onAction(CharacterListAction.OnRetryClick) },
-                onLoadMore = { onAction(CharacterListAction.OnLoadMore) },
-                onSearchQueryChange = { onAction(CharacterListAction.OnSearchQueryChange(it)) },
-                onFavoriteClick = { onAction(CharacterListAction.OnFavoriteClick(it)) },
-                onCharacterClick = onCharacterClick,
-                onCatalogSectionClick = onCatalogSectionClick,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding),
-            )
-        }
-    }
-}
-
-@Composable
-private fun FavoritesTopBarButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    IconButton(
-        onClick = onClick,
-        modifier = modifier.padding(end = 8.dp),
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Favorite,
-            contentDescription = stringResource(R.string.characters_favorites_content_description),
-            tint = DisneyColors.Gold,
-        )
-    }
-}
-
-@Composable
-private fun CharacterCatalogBackground(modifier: Modifier = Modifier) {
-    val topAccent = DisneyColors.BlueGlow.copy(alpha = 0.24f)
-    val middleAccent = DisneyColors.PurpleGlow.copy(alpha = 0.18f)
-    val bottomAccent = DisneyColors.MagentaGlow.copy(alpha = 0.16f)
-
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(DisneyBrushes.catalogBackground),
-    ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 92.dp, y = (-68).dp)
-                .size(320.dp)
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            topAccent,
-                            Color.Transparent,
-                        ),
-                    ),
-                    shape = CircleShape,
-                ),
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .offset(x = (-132).dp, y = (-12).dp)
-                .size(340.dp)
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            middleAccent,
-                            Color.Transparent,
-                        ),
-                    ),
-                    shape = CircleShape,
-                ),
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .offset(x = 128.dp, y = 96.dp)
-                .size(360.dp)
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            bottomAccent,
-                            Color.Transparent,
-                        ),
-                    ),
-                    shape = CircleShape,
-                ),
-        )
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val starColor = Color.White
-            val glowColor = DisneyColors.Gold
-            val stars = listOf(
-                Offset(size.width * 0.05f, size.height * 0.23f),
-                Offset(size.width * 0.10f, size.height * 0.13f),
-                Offset(size.width * 0.14f, size.height * 0.30f),
-                Offset(size.width * 0.28f, size.height * 0.08f),
-                Offset(size.width * 0.33f, size.height * 0.24f),
-                Offset(size.width * 0.43f, size.height * 0.10f),
-                Offset(size.width * 0.54f, size.height * 0.16f),
-                Offset(size.width * 0.64f, size.height * 0.07f),
-                Offset(size.width * 0.72f, size.height * 0.22f),
-                Offset(size.width * 0.82f, size.height * 0.11f),
-                Offset(size.width * 0.92f, size.height * 0.28f),
-                Offset(size.width * 0.18f, size.height * 0.38f),
-                Offset(size.width * 0.31f, size.height * 0.45f),
-                Offset(size.width * 0.48f, size.height * 0.36f),
-                Offset(size.width * 0.61f, size.height * 0.52f),
-                Offset(size.width * 0.72f, size.height * 0.45f),
-                Offset(size.width * 0.91f, size.height * 0.50f),
-                Offset(size.width * 0.12f, size.height * 0.62f),
-                Offset(size.width * 0.36f, size.height * 0.58f),
-                Offset(size.width * 0.52f, size.height * 0.68f),
-                Offset(size.width * 0.68f, size.height * 0.78f),
-                Offset(size.width * 0.86f, size.height * 0.70f),
-                Offset(size.width * 0.24f, size.height * 0.84f),
-                Offset(size.width * 0.44f, size.height * 0.88f),
-                Offset(size.width * 0.78f, size.height * 0.90f),
-            )
-
-            stars.forEachIndexed { index, offset ->
-                val radius = when {
-                    index % 7 == 0 -> 1.9.dp.toPx()
-                    index % 3 == 0 -> 1.45.dp.toPx()
-                    else -> 1.05.dp.toPx()
-                }
-                val alpha = when {
-                    index % 7 == 0 -> 0.6f
-                    index % 2 == 0 -> 0.48f
-                    else -> 0.32f
-                }
-                drawCircle(
-                    color = starColor.copy(alpha = alpha),
-                    radius = radius,
-                    center = offset,
-                )
-            }
-            drawCircle(
-                color = glowColor.copy(alpha = 0.18f),
-                radius = 2.6.dp.toPx(),
-                center = Offset(size.width * 0.66f, size.height * 0.24f),
-            )
-            drawCircle(
-                color = DisneyColors.LavenderMuted.copy(alpha = 0.16f),
-                radius = 3.dp.toPx(),
-                center = Offset(size.width * 0.22f, size.height * 0.74f),
-            )
-        }
-    }
-}
-
-@Composable
-private fun CharacterTitleMark(modifier: Modifier = Modifier) {
-    Row(
+    CatalogScaffold(
+        selectedSection = CatalogSection.Characters,
+        onSectionClick = onCatalogSectionClick,
+        onFavoritesClick = onFavoritesClick,
+        snackbarHostState = snackbarHostState,
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(34.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.tertiary,
-                        ),
-                    ),
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = "D",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimary,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-            )
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 7.dp, end = 7.dp)
-                    .size(5.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.tertiaryContainer),
-            )
-        }
-        Text(
-            text = stringResource(R.string.characters_title),
-            style = MaterialTheme.typography.titleLarge,
-            color = DisneyColors.TextPrimaryOnDark,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+    ) { contentModifier ->
+        CharacterCatalogContent(
+            state = state,
+            errorMessage = state.error?.asString(LocalContext.current),
+            onRetryClick = { onAction(CharacterListAction.OnRetryClick) },
+            onLoadMore = { onAction(CharacterListAction.OnLoadMore) },
+            onSearchQueryChange = { onAction(CharacterListAction.OnSearchQueryChange(it)) },
+            onFavoriteClick = { onAction(CharacterListAction.OnFavoriteClick(it)) },
+            onCharacterClick = onCharacterClick,
+            modifier = contentModifier,
         )
     }
 }
@@ -369,7 +154,6 @@ private fun CharacterCatalogContent(
     onSearchQueryChange: (String) -> Unit,
     onFavoriteClick: (Int) -> Unit,
     onCharacterClick: (Int) -> Unit,
-    onCatalogSectionClick: (CatalogSection) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val gridState = rememberLazyGridState()
@@ -403,7 +187,7 @@ private fun CharacterCatalogContent(
         columns = GridCells.Fixed(3),
         state = gridState,
         modifier = modifier,
-        contentPadding = PaddingValues(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 28.dp),
+        contentPadding = PaddingValues(start = 20.dp, top = 0.dp, end = 20.dp, bottom = 28.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -412,7 +196,6 @@ private fun CharacterCatalogContent(
                 searchQuery = state.searchQuery,
                 isLoading = state.isLoading,
                 onSearchQueryChange = onSearchQueryChange,
-                onCatalogSectionClick = onCatalogSectionClick,
             )
         }
 
@@ -467,7 +250,6 @@ private fun CharacterCatalogHeader(
     searchQuery: String,
     isLoading: Boolean,
     onSearchQueryChange: (String) -> Unit,
-    onCatalogSectionClick: (CatalogSection) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -490,11 +272,6 @@ private fun CharacterCatalogHeader(
                 )
             }
         }
-        CatalogSectionSelector(
-            selectedSection = CatalogSection.Characters,
-            onSectionClick = onCatalogSectionClick,
-        )
-        Spacer(modifier = Modifier.height(2.dp))
     }
 }
 

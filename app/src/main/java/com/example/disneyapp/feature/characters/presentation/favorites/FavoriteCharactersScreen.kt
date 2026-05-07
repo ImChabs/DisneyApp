@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -52,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
+import com.example.disneyapp.feature.characters.presentation.components.CharacterBackIconButton
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortrait
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortraitVariant
 import com.example.disneyapp.feature.characters.presentation.components.PremiumStatePanel
@@ -117,19 +117,13 @@ fun FavoriteCharactersScreen(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = onBackClick) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.character_detail_back_content_description),
-                                tint = Color.White,
-                            )
-                        }
+                        CharacterBackIconButton(onClick = onBackClick)
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent,
                         scrolledContainerColor = Color.Transparent,
                         titleContentColor = Color.White,
-                        navigationIconContentColor = Color.White,
+                        navigationIconContentColor = DisneyColors.Gold,
                     ),
                 )
             },

@@ -24,19 +24,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,8 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
+import com.example.disneyapp.feature.catalog.presentation.CatalogScaffold
 import com.example.disneyapp.feature.catalog.presentation.CatalogSection
-import com.example.disneyapp.feature.catalog.presentation.CatalogSectionSelector
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortrait
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortraitVariant
 import com.example.disneyapp.feature.characters.presentation.components.PremiumStatePanel
@@ -69,6 +64,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun FilmsRoot(
     onCharactersClick: () -> Unit,
+    onFavoritesClick: () -> Unit,
     onCharacterClick: (Int) -> Unit,
     viewModel: FilmsViewModel = koinViewModel(),
 ) {
@@ -88,6 +84,7 @@ fun FilmsRoot(
     FilmsScreen(
         state = state,
         onAction = viewModel::onAction,
+        onFavoritesClick = onFavoritesClick,
         onCatalogSectionClick = { section ->
             when (section) {
                 CatalogSection.Characters -> onCharactersClick()
@@ -103,59 +100,30 @@ fun FilmsRoot(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilmsScreen(
     state: FilmsState,
     onAction: (FilmsAction) -> Unit,
+    onFavoritesClick: () -> Unit,
     onCatalogSectionClick: (CatalogSection) -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(DisneyBrushes.catalogBackground),
+    CatalogScaffold(
+        selectedSection = CatalogSection.Films,
+        onSectionClick = onCatalogSectionClick,
+        onFavoritesClick = onFavoritesClick,
+        snackbarHostState = snackbarHostState,
+        modifier = modifier,
+    ) { contentModifier ->
+        FilmsContent(
+            state = state,
+            errorMessage = state.error?.asString(LocalContext.current),
+            onSearchQueryChange = { onAction(FilmsAction.OnSearchQueryChange(it)) },
+            onRetryClick = { onAction(FilmsAction.OnRetryClick) },
+            onCharacterClick = { onAction(FilmsAction.OnCharacterClick(it)) },
+            modifier = contentModifier,
         )
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(
-                            text = stringResource(R.string.films_title),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = DisneyColors.TextPrimaryOnDark,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent,
-                        titleContentColor = Color.White,
-                    ),
-                )
-            },
-            containerColor = Color.Transparent,
-            snackbarHost = {
-                SnackbarHost(hostState = snackbarHostState)
-            },
-        ) { contentPadding ->
-            FilmsContent(
-                state = state,
-                errorMessage = state.error?.asString(LocalContext.current),
-                onSearchQueryChange = { onAction(FilmsAction.OnSearchQueryChange(it)) },
-                onRetryClick = { onAction(FilmsAction.OnRetryClick) },
-                onCharacterClick = { onAction(FilmsAction.OnCharacterClick(it)) },
-                onCatalogSectionClick = onCatalogSectionClick,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding),
-            )
-        }
     }
 }
 
@@ -166,12 +134,11 @@ private fun FilmsContent(
     onSearchQueryChange: (String) -> Unit,
     onRetryClick: () -> Unit,
     onCharacterClick: (Int) -> Unit,
-    onCatalogSectionClick: (CatalogSection) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
         modifier = modifier,
-        contentPadding = PaddingValues(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 28.dp),
+        contentPadding = PaddingValues(start = 20.dp, top = 0.dp, end = 20.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
@@ -179,7 +146,6 @@ private fun FilmsContent(
                 query = state.searchQuery,
                 isLoading = state.isLoading,
                 onQueryChange = onSearchQueryChange,
-                onCatalogSectionClick = onCatalogSectionClick,
             )
         }
 
@@ -230,7 +196,6 @@ private fun FilmsHeader(
     query: String,
     isLoading: Boolean,
     onQueryChange: (String) -> Unit,
-    onCatalogSectionClick: (CatalogSection) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -253,11 +218,6 @@ private fun FilmsHeader(
                 )
             }
         }
-        CatalogSectionSelector(
-            selectedSection = CatalogSection.Films,
-            onSectionClick = onCatalogSectionClick,
-        )
-        Spacer(modifier = Modifier.height(2.dp))
     }
 }
 
@@ -552,6 +512,7 @@ private fun FilmsScreenPreview() {
                 ),
             ),
             onAction = {},
+            onFavoritesClick = {},
             onCatalogSectionClick = {},
         )
     }
@@ -564,6 +525,7 @@ private fun FilmsIdlePreview() {
         FilmsScreen(
             state = FilmsState(),
             onAction = {},
+            onFavoritesClick = {},
             onCatalogSectionClick = {},
         )
     }

@@ -68,6 +68,9 @@ fun DisneyAppRoot() {
             entry<FilmsRoute> {
                 FilmsRoot(
                     onCharactersClick = ::popToCharacters,
+                    onFavoritesClick = {
+                        backStack.add(FavoriteCharactersRoute)
+                    },
                     onCharacterClick = { characterId ->
                         backStack.add(CharacterDetailRoute(characterId = characterId))
                     },

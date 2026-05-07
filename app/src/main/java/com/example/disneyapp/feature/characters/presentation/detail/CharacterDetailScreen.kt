@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material3.Button
@@ -53,8 +52,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -62,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.disneyapp.R
 import com.example.disneyapp.core.presentation.asString
+import com.example.disneyapp.feature.characters.presentation.components.CharacterBackIconButton
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortrait
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortraitVariant
 import com.example.disneyapp.feature.characters.presentation.components.PremiumStatePanel
@@ -128,7 +126,7 @@ fun CharacterDetailScreen(
                         )
                     },
                     navigationIcon = {
-                        DetailBackButton(onClick = onBackClick)
+                        CharacterBackIconButton(onClick = onBackClick)
                     },
                     actions = {
                         state.character?.let { character ->
@@ -142,7 +140,7 @@ fun CharacterDetailScreen(
                         containerColor = Color.Transparent,
                         scrolledContainerColor = Color.Transparent,
                         titleContentColor = Color.White,
-                        navigationIconContentColor = Color.White,
+                        navigationIconContentColor = DisneyColors.Gold,
                     ),
                 )
             },
@@ -184,36 +182,6 @@ private fun DetailFavoriteButton(
             ),
             tint = if (isFavorite) DisneyColors.Gold else Color.White.copy(alpha = 0.76f),
         )
-    }
-}
-
-@Composable
-private fun DetailBackButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val contentDescription = stringResource(R.string.character_detail_back_content_description)
-
-    Surface(
-        modifier = modifier
-            .padding(start = 12.dp)
-            .size(42.dp)
-            .semantics {
-                this.contentDescription = contentDescription
-            }
-            .clickable(onClick = onClick),
-        shape = CircleShape,
-        color = DisneyColors.Ink.copy(alpha = 0.72f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(22.dp),
-            )
-        }
     }
 }
 
