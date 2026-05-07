@@ -43,8 +43,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,6 +77,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun CharacterListRoot(
+    resetRequest: Int = 0,
     onCharacterClick: (Int) -> Unit = {},
     onFavoritesClick: () -> Unit = {},
     onFilmsClick: () -> Unit = {},
@@ -84,6 +88,7 @@ fun CharacterListRoot(
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val comingSoonMessage = stringResource(R.string.catalog_section_coming_soon)
+    var handledResetRequest by rememberSaveable { mutableIntStateOf(0) }
 
     LaunchedEffect(viewModel.events) {
         viewModel.events.collect { event ->
@@ -95,9 +100,17 @@ fun CharacterListRoot(
         }
     }
 
+    LaunchedEffect(resetRequest) {
+        if (resetRequest > handledResetRequest) {
+            handledResetRequest = resetRequest
+            viewModel.onAction(CharacterListAction.OnResetCatalog)
+        }
+    }
+
     CharacterListScreen(
         state = state,
         onAction = viewModel::onAction,
+        resetRequest = resetRequest,
         onCharacterClick = onCharacterClick,
         onFavoritesClick = onFavoritesClick,
         onCatalogSectionClick = { section ->
@@ -119,6 +132,7 @@ fun CharacterListRoot(
 fun CharacterListScreen(
     state: CharacterListState,
     onAction: (CharacterListAction) -> Unit,
+    resetRequest: Int = 0,
     onCharacterClick: (Int) -> Unit,
     onFavoritesClick: () -> Unit,
     onCatalogSectionClick: (CatalogSection) -> Unit,
@@ -135,6 +149,7 @@ fun CharacterListScreen(
         CharacterCatalogContent(
             state = state,
             errorMessage = state.error?.asString(LocalContext.current),
+            resetRequest = resetRequest,
             onRetryClick = { onAction(CharacterListAction.OnRetryClick) },
             onLoadMore = { onAction(CharacterListAction.OnLoadMore) },
             onSearchQueryChange = { onAction(CharacterListAction.OnSearchQueryChange(it)) },
@@ -149,6 +164,7 @@ fun CharacterListScreen(
 private fun CharacterCatalogContent(
     state: CharacterListState,
     errorMessage: String?,
+    resetRequest: Int,
     onRetryClick: () -> Unit,
     onLoadMore: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
@@ -157,6 +173,14 @@ private fun CharacterCatalogContent(
     modifier: Modifier = Modifier,
 ) {
     val gridState = rememberLazyGridState()
+    var handledScrollResetRequest by rememberSaveable { mutableIntStateOf(0) }
+
+    LaunchedEffect(resetRequest) {
+        if (resetRequest > handledScrollResetRequest) {
+            handledScrollResetRequest = resetRequest
+            gridState.scrollToItem(0)
+        }
+    }
 
     LaunchedEffect(
         gridState,
