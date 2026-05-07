@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
+import com.example.disneyapp.ui.theme.DisneyBrushes
+import com.example.disneyapp.ui.theme.DisneyColors
 
 enum class CharacterPortraitVariant(
     val contentPadding: Dp,
@@ -93,7 +95,7 @@ private fun CharacterPortraitLoading(
         Surface(
             shape = CircleShape,
             color = Color.White.copy(alpha = 0.12f),
-            border = BorderStroke(1.dp, Color(0xFFFFD782).copy(alpha = 0.26f)),
+            border = BorderStroke(1.dp, DisneyColors.Gold.copy(alpha = 0.26f)),
             modifier = Modifier.size(variant.loadingMedallionSize),
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -103,7 +105,7 @@ private fun CharacterPortraitLoading(
                         .background(
                             brush = Brush.radialGradient(
                                 colors = listOf(
-                                    Color(0xFFFFD782).copy(alpha = 0.34f),
+                                    DisneyColors.Gold.copy(alpha = 0.34f),
                                     Color.Transparent,
                                 ),
                             ),
@@ -128,8 +130,8 @@ private fun CharacterPortraitFallback(
     ) {
         Surface(
             shape = CircleShape,
-            color = Color(0xFF111B35).copy(alpha = 0.72f),
-            border = BorderStroke(1.dp, Color(0xFFFFD782).copy(alpha = 0.54f)),
+            color = DisneyColors.InkElevated.copy(alpha = 0.72f),
+            border = BorderStroke(1.dp, DisneyColors.Gold.copy(alpha = 0.54f)),
             modifier = Modifier.size(variant.fallbackMedallionSize),
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -140,7 +142,7 @@ private fun CharacterPortraitFallback(
                     } else {
                         MaterialTheme.typography.headlineMedium
                     },
-                    color = Color(0xFFFFF3C7),
+                    color = DisneyColors.GoldSoft,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                 )
@@ -159,16 +161,7 @@ private fun CharacterPortraitPremiumBackground(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF08152F),
-                        Color(0xFF14295C),
-                        Color(0xFF2B2D6E),
-                        Color(0xFF5C4A1C),
-                    ),
-                ),
-            ),
+            .background(DisneyBrushes.imagePlaceholderGradient),
     ) {
         Box(
             modifier = Modifier

@@ -65,7 +65,9 @@ import com.example.disneyapp.core.presentation.asString
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortrait
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortraitVariant
 import com.example.disneyapp.feature.characters.presentation.components.PremiumStatePanel
+import com.example.disneyapp.ui.theme.DisneyBrushes
 import com.example.disneyapp.ui.theme.DisneyAppTheme
+import com.example.disneyapp.ui.theme.DisneyColors
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -119,7 +121,7 @@ fun CharacterDetailScreen(
                         Text(
                             text = state.character?.name ?: stringResource(R.string.character_detail_title),
                             style = MaterialTheme.typography.titleLarge,
-                            color = Color(0xFFF9FBFF),
+                            color = DisneyColors.TextPrimaryOnDark,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -180,7 +182,7 @@ private fun DetailFavoriteButton(
                     R.string.characters_add_favorite_content_description
                 },
             ),
-            tint = if (isFavorite) Color(0xFFFFD782) else Color.White.copy(alpha = 0.76f),
+            tint = if (isFavorite) DisneyColors.Gold else Color.White.copy(alpha = 0.76f),
         )
     }
 }
@@ -201,7 +203,7 @@ private fun DetailBackButton(
             }
             .clickable(onClick = onClick),
         shape = CircleShape,
-        color = Color(0xFF101A35).copy(alpha = 0.72f),
+        color = DisneyColors.Ink.copy(alpha = 0.72f),
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -406,15 +408,7 @@ private fun CharacterDetailSection(
     ) {
         Box(
             modifier = Modifier
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF101A35).copy(alpha = 0.92f),
-                            Color(0xFF272557).copy(alpha = 0.88f),
-                            Color(0xFF3F347F).copy(alpha = 0.76f),
-                        ),
-                    ),
-                ),
+                .background(DisneyBrushes.detailHeaderGradient),
         ) {
             Box(
                 modifier = Modifier
@@ -424,7 +418,7 @@ private fun CharacterDetailSection(
                     .background(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFFC7B8FF).copy(alpha = 0.18f),
+                                DisneyColors.Lavender.copy(alpha = 0.18f),
                                 Color.Transparent,
                             ),
                         ),
@@ -439,7 +433,7 @@ private fun CharacterDetailSection(
                     .background(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFFFFD782).copy(alpha = 0.12f),
+                                DisneyColors.Gold.copy(alpha = 0.12f),
                                 Color.Transparent,
                             ),
                         ),
@@ -458,7 +452,7 @@ private fun CharacterDetailSection(
                         modifier = Modifier
                             .size(11.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFFFD782)),
+                            .background(DisneyColors.Gold),
                     )
                     Text(
                         text = section.title,
@@ -495,8 +489,8 @@ private fun CharacterDetailFact(label: String) {
                 .background(
                     Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFFFFD782),
-                            Color(0xFFC7B8FF),
+                            DisneyColors.Gold,
+                            DisneyColors.Lavender,
                         ),
                     ),
                 ),
@@ -538,15 +532,7 @@ private fun CharacterDetailLoadingHero(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(0.86f)
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF243B7A),
-                            Color(0xFF7A4B9A),
-                            Color(0xFFC08A3A),
-                        ),
-                    ),
-                ),
+                .background(DisneyBrushes.compactDetailGradient),
         ) {
             Box(
                 modifier = Modifier
@@ -571,7 +557,7 @@ private fun CharacterDetailLoadingHero(modifier: Modifier = Modifier) {
                     .background(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFFC7B8FF).copy(alpha = 0.24f),
+                                DisneyColors.Lavender.copy(alpha = 0.24f),
                                 Color.Transparent,
                             ),
                         ),
@@ -602,7 +588,7 @@ private fun CharacterDetailLoadingHero(modifier: Modifier = Modifier) {
                 Box(contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(38.dp),
-                        color = Color(0xFFFFD782),
+                        color = DisneyColors.Gold,
                         strokeWidth = 3.dp,
                     )
                 }
@@ -635,7 +621,7 @@ private fun CharacterDetailLoadingHero(modifier: Modifier = Modifier) {
                 }
                 Surface(
                     shape = RoundedCornerShape(999.dp),
-                    color = Color(0xFF101A35).copy(alpha = 0.54f),
+                    color = DisneyColors.Ink.copy(alpha = 0.54f),
                     border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
                 ) {
                     Text(
@@ -666,9 +652,9 @@ private fun CharacterDetailLoadingSection(modifier: Modifier = Modifier) {
                 .background(
                     Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFF101A35).copy(alpha = 0.9f),
-                            Color(0xFF272557).copy(alpha = 0.82f),
-                            Color(0xFF3F347F).copy(alpha = 0.7f),
+                            DisneyColors.Ink.copy(alpha = 0.9f),
+                            DisneyColors.VioletDeep.copy(alpha = 0.82f),
+                            DisneyColors.Violet.copy(alpha = 0.7f),
                         ),
                     ),
                 )
@@ -682,7 +668,7 @@ private fun CharacterDetailLoadingSection(modifier: Modifier = Modifier) {
                     .background(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFFC7B8FF).copy(alpha = 0.16f),
+                                DisneyColors.Lavender.copy(alpha = 0.16f),
                                 Color.Transparent,
                             ),
                         ),
@@ -698,7 +684,7 @@ private fun CharacterDetailLoadingSection(modifier: Modifier = Modifier) {
                         modifier = Modifier
                             .size(11.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFFFD782).copy(alpha = 0.84f)),
+                            .background(DisneyColors.Gold.copy(alpha = 0.84f)),
                     )
                     LoadingPlaceholder(
                         modifier = Modifier.fillMaxWidth(0.38f),
@@ -752,8 +738,8 @@ private fun CharacterDetailError(
                 Button(
                     onClick = onRetryClick,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFD782),
-                        contentColor = Color(0xFF101A35),
+                        containerColor = DisneyColors.Gold,
+                        contentColor = DisneyColors.Ink,
                     ),
                 ) {
                     Text(text = stringResource(R.string.characters_retry))
@@ -777,16 +763,7 @@ private fun CharacterDetailBackground(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF07152D),
-                        Color(0xFF111D3D),
-                        Color(0xFF171A3A),
-                        Color(0xFF201735),
-                    ),
-                ),
-            ),
+            .background(DisneyBrushes.catalogBackground),
     ) {
         Box(
             modifier = Modifier
@@ -796,7 +773,7 @@ private fun CharacterDetailBackground(modifier: Modifier = Modifier) {
                 .background(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF5C86FF).copy(alpha = 0.24f),
+                            DisneyColors.BlueGlow.copy(alpha = 0.24f),
                             Color.Transparent,
                         ),
                     ),
@@ -811,7 +788,7 @@ private fun CharacterDetailBackground(modifier: Modifier = Modifier) {
                 .background(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFFC472FF).copy(alpha = 0.16f),
+                            DisneyColors.MagentaGlow.copy(alpha = 0.16f),
                             Color.Transparent,
                         ),
                     ),
@@ -841,7 +818,7 @@ private fun CharacterDetailBackground(modifier: Modifier = Modifier) {
                 )
             }
             drawCircle(
-                color = Color(0xFFFFD782).copy(alpha = 0.18f),
+                color = DisneyColors.Gold.copy(alpha = 0.18f),
                 radius = 2.8.dp.toPx(),
                 center = Offset(size.width * 0.66f, size.height * 0.24f),
             )

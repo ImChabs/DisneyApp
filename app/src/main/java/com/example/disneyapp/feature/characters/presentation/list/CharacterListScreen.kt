@@ -74,7 +74,9 @@ import com.example.disneyapp.core.presentation.asString
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortrait
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortraitVariant
 import com.example.disneyapp.feature.characters.presentation.components.PremiumStatePanel
+import com.example.disneyapp.ui.theme.DisneyBrushes
 import com.example.disneyapp.ui.theme.DisneyAppTheme
+import com.example.disneyapp.ui.theme.DisneyColors
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -171,31 +173,21 @@ private fun FavoritesTopBarButton(
         Icon(
             imageVector = Icons.Filled.Favorite,
             contentDescription = stringResource(R.string.characters_favorites_content_description),
-            tint = Color(0xFFFFD782),
+            tint = DisneyColors.Gold,
         )
     }
 }
 
 @Composable
 private fun CharacterCatalogBackground(modifier: Modifier = Modifier) {
-    val backgroundColors = listOf(
-        Color(0xFF07152D),
-        Color(0xFF111D3D),
-        Color(0xFF171A3A),
-        Color(0xFF201735),
-    )
-    val topAccent = Color(0xFF5C86FF).copy(alpha = 0.24f)
-    val middleAccent = Color(0xFF8D6CFF).copy(alpha = 0.18f)
-    val bottomAccent = Color(0xFFC472FF).copy(alpha = 0.16f)
+    val topAccent = DisneyColors.BlueGlow.copy(alpha = 0.24f)
+    val middleAccent = DisneyColors.PurpleGlow.copy(alpha = 0.18f)
+    val bottomAccent = DisneyColors.MagentaGlow.copy(alpha = 0.16f)
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = backgroundColors,
-                ),
-            ),
+            .background(DisneyBrushes.catalogBackground),
     ) {
         Box(
             modifier = Modifier
@@ -244,7 +236,7 @@ private fun CharacterCatalogBackground(modifier: Modifier = Modifier) {
         )
         Canvas(modifier = Modifier.fillMaxSize()) {
             val starColor = Color.White
-            val glowColor = Color(0xFFFFD782)
+            val glowColor = DisneyColors.Gold
             val stars = listOf(
                 Offset(size.width * 0.05f, size.height * 0.23f),
                 Offset(size.width * 0.10f, size.height * 0.13f),
@@ -296,7 +288,7 @@ private fun CharacterCatalogBackground(modifier: Modifier = Modifier) {
                 center = Offset(size.width * 0.66f, size.height * 0.24f),
             )
             drawCircle(
-                color = Color(0xFFBDA8FF).copy(alpha = 0.16f),
+                color = DisneyColors.LavenderMuted.copy(alpha = 0.16f),
                 radius = 3.dp.toPx(),
                 center = Offset(size.width * 0.22f, size.height * 0.74f),
             )
@@ -344,7 +336,7 @@ private fun CharacterTitleMark(modifier: Modifier = Modifier) {
         Text(
             text = stringResource(R.string.characters_title),
             style = MaterialTheme.typography.titleLarge,
-            color = Color(0xFFF9FBFF),
+            color = DisneyColors.TextPrimaryOnDark,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -474,7 +466,7 @@ private fun CharacterCatalogHeader(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(999.dp)),
-                    color = Color(0xFFFFD782),
+                    color = DisneyColors.Gold,
                     trackColor = Color.White.copy(alpha = 0.12f),
                 )
             }
@@ -486,15 +478,6 @@ private fun CharacterCatalogHeader(
 
 @Composable
 private fun CharacterHero(modifier: Modifier = Modifier) {
-    val gradient = Brush.linearGradient(
-        colors = listOf(
-            Color(0xFF172E66),
-            Color(0xFF3F347F),
-            Color(0xFF7A4B9A),
-            Color(0xFFC08A3A),
-        ),
-    )
-
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
@@ -504,7 +487,7 @@ private fun CharacterHero(modifier: Modifier = Modifier) {
     ) {
         Box(
             modifier = Modifier
-                .background(gradient)
+                .background(DisneyBrushes.heroGradient)
                 .padding(22.dp),
         ) {
             Column(
@@ -546,20 +529,20 @@ private fun CharacterSearchBar(
             unfocusedTextColor = Color.White,
             focusedPlaceholderColor = Color.White.copy(alpha = 0.64f),
             unfocusedPlaceholderColor = Color.White.copy(alpha = 0.58f),
-            focusedContainerColor = Color(0xFF101A35).copy(alpha = 0.78f),
-            unfocusedContainerColor = Color(0xFF101A35).copy(alpha = 0.62f),
-            focusedBorderColor = Color(0xFFC7B8FF).copy(alpha = 0.84f),
+            focusedContainerColor = DisneyColors.Ink.copy(alpha = 0.78f),
+            unfocusedContainerColor = DisneyColors.Ink.copy(alpha = 0.62f),
+            focusedBorderColor = DisneyColors.Lavender.copy(alpha = 0.84f),
             unfocusedBorderColor = Color.White.copy(alpha = 0.18f),
-            cursorColor = Color(0xFFFFD782),
+            cursorColor = DisneyColors.Gold,
         ),
     )
 }
 
 @Composable
 private fun CharacterFilterChips(modifier: Modifier = Modifier) {
-    val selectedContainer = Color(0xFF4D3F86).copy(alpha = 0.88f)
-    val unselectedContainer = Color(0xFF101A35).copy(alpha = 0.54f)
-    val selectedContent = Color(0xFFFFD782)
+    val selectedContainer = DisneyColors.VioletMuted.copy(alpha = 0.88f)
+    val unselectedContainer = DisneyColors.Ink.copy(alpha = 0.54f)
+    val selectedContent = DisneyColors.Gold
     val unselectedContent = Color.White.copy(alpha = 0.76f)
     val chipColors = FilterChipDefaults.elevatedFilterChipColors(
         containerColor = unselectedContainer,
@@ -604,7 +587,7 @@ private fun CharacterFilterChips(modifier: Modifier = Modifier) {
                     enabled = true,
                     selected = selected,
                     borderColor = Color.White.copy(alpha = 0.18f),
-                    selectedBorderColor = Color(0xFFFFD782).copy(alpha = 0.46f),
+                    selectedBorderColor = DisneyColors.Gold.copy(alpha = 0.46f),
                     borderWidth = 1.dp,
                     selectedBorderWidth = 1.dp,
                 ),
@@ -725,7 +708,7 @@ private fun FavoriteCardButton(
     Surface(
         modifier = modifier.size(38.dp),
         shape = CircleShape,
-        color = Color(0xFF101A35).copy(alpha = 0.74f),
+        color = DisneyColors.Ink.copy(alpha = 0.74f),
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
     ) {
         IconButton(onClick = onClick) {
@@ -738,7 +721,7 @@ private fun FavoriteCardButton(
                         R.string.characters_add_favorite_content_description
                     },
                 ),
-                tint = if (isFavorite) Color(0xFFFFD782) else Color.White.copy(alpha = 0.78f),
+                tint = if (isFavorite) DisneyColors.Gold else Color.White.copy(alpha = 0.78f),
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -824,10 +807,10 @@ private fun LoadingCharacterCard(modifier: Modifier = Modifier) {
                 .background(
                     Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFF172E66).copy(alpha = 0.94f),
-                            Color(0xFF3F347F).copy(alpha = 0.9f),
-                            Color(0xFF7A4B9A).copy(alpha = 0.78f),
-                            Color(0xFFC08A3A).copy(alpha = 0.72f),
+                            DisneyColors.RoyalBlue.copy(alpha = 0.94f),
+                            DisneyColors.Violet.copy(alpha = 0.9f),
+                            DisneyColors.Orchid.copy(alpha = 0.78f),
+                            DisneyColors.GoldDeep.copy(alpha = 0.72f),
                         ),
                     ),
                 ),
@@ -855,7 +838,7 @@ private fun LoadingCharacterCard(modifier: Modifier = Modifier) {
                     .background(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFFC7B8FF).copy(alpha = 0.22f),
+                                DisneyColors.Lavender.copy(alpha = 0.22f),
                                 Color.Transparent,
                             ),
                         ),
@@ -888,7 +871,7 @@ private fun LoadingCharacterCard(modifier: Modifier = Modifier) {
                         modifier = Modifier
                             .size(22.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFFFD782).copy(alpha = 0.54f)),
+                            .background(DisneyColors.Gold.copy(alpha = 0.54f)),
                     )
                 }
             }
@@ -951,10 +934,10 @@ private fun CharacterListErrorState(
                 onClick = onRetryClick,
                 enabled = !isLoading,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFFD782),
-                    contentColor = Color(0xFF101A35),
-                    disabledContainerColor = Color(0xFFFFD782).copy(alpha = 0.74f),
-                    disabledContentColor = Color(0xFF101A35).copy(alpha = 0.74f),
+                    containerColor = DisneyColors.Gold,
+                    contentColor = DisneyColors.Ink,
+                    disabledContainerColor = DisneyColors.Gold.copy(alpha = 0.74f),
+                    disabledContentColor = DisneyColors.Ink.copy(alpha = 0.74f),
                 ),
             ) {
                 Row(
@@ -965,7 +948,7 @@ private fun CharacterListErrorState(
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp,
-                            color = Color(0xFF101A35),
+                            color = DisneyColors.Ink,
                         )
                         Spacer(modifier = Modifier.size(8.dp))
                     }

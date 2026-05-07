@@ -6,6 +6,8 @@ DisneyApp is a simple native Android portfolio app for exploring Disney characte
 
 The app should let users browse characters, search by name, open character details, and save favorite characters locally.
 
+The app should keep a consistent premium Disney-inspired visual style. Visual direction, color tokens, gradients, and reusable UI styling rules are defined in `docs/disneyapp_design_system.md`.
+
 This project is primarily a learning and portfolio app. The scope should stay focused, clean, and practical.
 
 ## Goal

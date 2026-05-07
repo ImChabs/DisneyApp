@@ -56,7 +56,9 @@ import com.example.disneyapp.feature.characters.presentation.components.Characte
 import com.example.disneyapp.feature.characters.presentation.components.CharacterPortraitVariant
 import com.example.disneyapp.feature.characters.presentation.components.PremiumStatePanel
 import com.example.disneyapp.feature.characters.presentation.list.CharacterListItemUi
+import com.example.disneyapp.ui.theme.DisneyBrushes
 import com.example.disneyapp.ui.theme.DisneyAppTheme
+import com.example.disneyapp.ui.theme.DisneyColors
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -108,7 +110,7 @@ fun FavoriteCharactersScreen(
                         Text(
                             text = stringResource(R.string.favorites_title),
                             style = MaterialTheme.typography.titleLarge,
-                            color = Color(0xFFF9FBFF),
+                            color = DisneyColors.TextPrimaryOnDark,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -225,14 +227,14 @@ private fun FavoriteCharacterCard(
                     .padding(8.dp)
                     .size(38.dp),
                 shape = CircleShape,
-                color = Color(0xFF101A35).copy(alpha = 0.74f),
+                color = DisneyColors.Ink.copy(alpha = 0.74f),
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
             ) {
                 IconButton(onClick = onFavoriteClick) {
                     Icon(
                         imageVector = Icons.Filled.Favorite,
                         contentDescription = stringResource(R.string.characters_remove_favorite_content_description),
-                        tint = Color(0xFFFFD782),
+                        tint = DisneyColors.Gold,
                         modifier = Modifier.size(20.dp),
                     )
                 }
@@ -305,15 +307,7 @@ private fun FavoriteCharactersBackground(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF07152D),
-                        Color(0xFF151A3C),
-                        Color(0xFF211735),
-                    ),
-                ),
-            ),
+            .background(DisneyBrushes.favoritesBackground),
     )
     Canvas(modifier = Modifier.fillMaxSize()) {
         val stars = listOf(
@@ -358,12 +352,12 @@ private fun FavoriteCharactersBackground(modifier: Modifier = Modifier) {
             )
         }
         drawCircle(
-            color = Color(0xFFFFD782).copy(alpha = 0.18f),
+            color = DisneyColors.Gold.copy(alpha = 0.18f),
             radius = 2.8.dp.toPx(),
             center = Offset(size.width * 0.76f, size.height * 0.34f),
         )
         drawCircle(
-            color = Color(0xFFBDA8FF).copy(alpha = 0.16f),
+            color = DisneyColors.LavenderMuted.copy(alpha = 0.16f),
             radius = 3.2.dp.toPx(),
             center = Offset(size.width * 0.24f, size.height * 0.64f),
         )
