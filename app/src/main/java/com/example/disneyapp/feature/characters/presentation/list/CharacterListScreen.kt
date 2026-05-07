@@ -983,7 +983,7 @@ private fun CharacterListScreenPreview() {
                 characters = listOf(
                     CharacterListItemUi(
                         id = 1,
-                        name = "Mickey Mouse",
+                        name = "Achilles",
                         imageUrl = null,
                         metadataBadges = listOf("2 films", "1 show"),
                     ),

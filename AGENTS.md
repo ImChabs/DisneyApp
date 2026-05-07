@@ -4,7 +4,7 @@ Use `docs/disneyapp_blueprint.md` as the product source of truth. Keep the app f
 
 ## Project Direction
 
-- Build with Kotlin, Jetpack Compose, Material 3, Navigation 3, Ktor, Koin, Room, Coil, Coroutines, Flow, and StateFlow.
+- Build with Kotlin, Jetpack Compose, Material 3, Navigation 3, Ktor, Koin, Room, Coil, Coroutines, Flow, StateFlow, SharedFlow, etc.
 - Follow Clean Architecture, MVI, unidirectional data flow, and feature-based organization.
 - Handle Disney API responses safely. Missing, empty, or null fields must not crash the app; missing images need a placeholder or fallback.
 - Keep scope aligned with the blueprint. Do not add auth, accounts, custom backend, payments, social features, ads, or complex offline sync unless the blueprint changes.
