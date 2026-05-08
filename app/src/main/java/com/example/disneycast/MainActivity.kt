@@ -8,7 +8,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.disneycast.core.presentation.splash.DisneySplashGate
 import com.example.disneycast.ui.theme.DisneyCastTheme
-import com.google.firebase.analytics.FirebaseAnalytics
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,9 +17,6 @@ class MainActivity : ComponentActivity() {
             setTheme(R.style.Theme_DisneyCast)
         }
         super.onCreate(savedInstanceState)
-        FirebaseAnalytics.getInstance(this).logEvent("debug_app_open", Bundle().apply {
-            putString("source", "main_activity")
-        })
         enableEdgeToEdge()
         setContent {
             DisneyCastTheme {
