@@ -1,10 +1,10 @@
-# DisneyApp
+# DisneyCast
 
 Native Android Disney character browser app built with Kotlin, Jetpack Compose, Clean Architecture, MVI, and modern Android best practices.
 
 ## Description
 
-DisneyApp is a native Android portfolio app for exploring Disney catalog content through the public Disney API. The app focuses on browsing characters, searching by name, viewing character details, saving local favorites, and presenting the experience with a polished Disney-inspired visual style.
+DisneyCast is a native Android portfolio app for exploring Disney catalog content through the public Disney API. The app focuses on browsing characters, searching by name, viewing character details, saving local favorites, and presenting the experience with a polished Disney-inspired visual style.
 
 ## Project Goal
 
@@ -38,7 +38,7 @@ The goal of this project is to practice and showcase modern Android development 
 
 ## Architecture
 
-DisneyApp follows Clean Architecture, MVI, and unidirectional data flow inside a single `:app` module. The codebase is organized by feature packages while keeping clear boundaries between domain, data, and presentation layers.
+DisneyCast follows Clean Architecture, MVI, and unidirectional data flow inside a single `:app` module. The codebase is organized by feature packages while keeping clear boundaries between domain, data, and presentation layers.
 
 Screen state is exposed with `StateFlow`, user interactions are modeled as actions, and one-time UI events are handled through event flows where needed. Domain models are kept separate from remote DTOs and Room entities, with explicit mappers between layers.
 
@@ -46,11 +46,11 @@ Screen state is exposed with `StateFlow`, user interactions are modeled as actio
 
 | Character Catalog | Character Search | Favorites |
 | --- | --- | --- |
-| ![Character catalog screen](docs/screenshots/Screenshot_20260507-094311_DisneyApp.jpg) | ![Character search screen](docs/screenshots/Screenshot_20260507-094325_DisneyApp.jpg) | ![Favorites screen](docs/screenshots/Screenshot_20260507-094348_DisneyApp.jpg) |
+| ![Character catalog screen](docs/screenshots/Screenshot_20260507-094311_DisneyCast.jpg) | ![Character search screen](docs/screenshots/Screenshot_20260507-094325_DisneyCast.jpg) | ![Favorites screen](docs/screenshots/Screenshot_20260507-094348_DisneyCast.jpg) |
 
 | Character List | Film Appearances | Character Detail |
 | --- | --- | --- |
-| ![Character list screen](docs/screenshots/Screenshot_20260507-094435_DisneyApp.jpg) | ![Film appearances screen](docs/screenshots/Screenshot_20260507-094456_DisneyApp.jpg) | ![Character detail screen](docs/screenshots/Screenshot_20260507-094709_DisneyApp.jpg) |
+| ![Character list screen](docs/screenshots/Screenshot_20260507-094435_DisneyCast.jpg) | ![Film appearances screen](docs/screenshots/Screenshot_20260507-094456_DisneyCast.jpg) | ![Character detail screen](docs/screenshots/Screenshot_20260507-094709_DisneyCast.jpg) |
 
 ## How to Run
 
@@ -68,7 +68,7 @@ You can also build the debug APK from the terminal:
 ## Project Structure
 
 ```text
-app/src/main/java/com/example/disneyapp
+app/src/main/java/com/example/disneycast
 ├── core          # Shared data, domain, coroutine, network, and UI helpers
 ├── di            # Koin dependency injection modules
 ├── feature       # Feature-based app areas
