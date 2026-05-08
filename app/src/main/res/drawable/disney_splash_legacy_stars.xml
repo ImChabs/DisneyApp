@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="800dp"
+    android:viewportWidth="360"
+    android:viewportHeight="800">
+    <path
+        android:fillAlpha="0.62"
+        android:fillColor="@color/splash_star_gold"
+        android:pathData="M48,72 L51,79 L58,82 L51,85 L48,92 L45,85 L38,82 L45,79 Z" />
+    <path
+        android:fillAlpha="0.42"
+        android:fillColor="@color/splash_star_lavender"
+        android:pathData="M291,88 L293,93 L298,95 L293,97 L291,102 L289,97 L284,95 L289,93 Z" />
+    <path
+        android:fillAlpha="0.5"
+        android:fillColor="@color/splash_star_gold"
+        android:pathData="M148,128 L150,133 L155,135 L150,137 L148,142 L146,137 L141,135 L146,133 Z" />
+    <path
+        android:fillAlpha="0.38"
+        android:fillColor="@color/splash_star_lavender"
+        android:pathData="M321,194 L323,198 L327,200 L323,202 L321,206 L319,202 L315,200 L319,198 Z" />
+    <path
+        android:fillAlpha="0.55"
+        android:fillColor="@color/splash_star_gold"
+        android:pathData="M78,224 L80,229 L85,231 L80,233 L78,238 L76,233 L71,231 L76,229 Z" />
+    <path
+        android:fillAlpha="0.34"
+        android:fillColor="@color/splash_star_lavender"
+        android:pathData="M232,274 L234,278 L238,280 L234,282 L232,286 L230,282 L226,280 L230,278 Z" />
+    <path
+        android:fillAlpha="0.58"
+        android:fillColor="@color/splash_star_gold"
+        android:pathData="M300,356 L303,363 L310,366 L303,369 L300,376 L297,369 L290,366 L297,363 Z" />
+    <path
+        android:fillAlpha="0.36"
+        android:fillColor="@color/splash_star_lavender"
+        android:pathData="M41,392 L43,396 L47,398 L43,400 L41,404 L39,400 L35,398 L39,396 Z" />
+    <path
+        android:fillAlpha="0.45"
+        android:fillColor="@color/splash_star_gold"
+        android:pathData="M170,452 L172,457 L177,459 L172,461 L170,466 L168,461 L163,459 L168,457 Z" />
+    <path
+        android:fillAlpha="0.34"
+        android:fillColor="@color/splash_star_lavender"
+        android:pathData="M324,522 L326,526 L330,528 L326,530 L324,534 L322,530 L318,528 L322,526 Z" />
+    <path
+        android:fillAlpha="0.48"
+        android:fillColor="@color/splash_star_gold"
+        android:pathData="M92,584 L95,591 L102,594 L95,597 L92,604 L89,597 L82,594 L89,591 Z" />
+    <path
+        android:fillAlpha="0.35"
+        android:fillColor="@color/splash_star_lavender"
+        android:pathData="M252,660 L254,664 L258,666 L254,668 L252,672 L250,668 L246,666 L250,664 Z" />
+</vector>
