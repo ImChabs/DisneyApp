@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "DisneyApp"
+rootProject.name = "DisneyCast"
 include(":app")
  

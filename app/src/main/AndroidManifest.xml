@@ -10,15 +10,15 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher_disney"
         android:label="@string/app_name"
-        android:name=".DisneyAppApplication"
+        android:name=".DisneyCastApplication"
         android:roundIcon="@mipmap/ic_launcher_disney_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.DisneyApp">
+        android:theme="@style/Theme.DisneyCast">
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.DisneyApp.Starting">
+            android:theme="@style/Theme.DisneyCast.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

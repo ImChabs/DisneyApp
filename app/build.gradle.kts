@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.disneyapp"
+    namespace = "com.example.disneycast"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -14,7 +14,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.disneyapp"
+        applicationId = "com.example.disneycast"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
