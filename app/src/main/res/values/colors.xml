@@ -8,4 +8,8 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="splash_background">#FF07152D</color>
+    <color name="splash_background_mid">#FF111D3D</color>
+    <color name="splash_background_end">#FF201735</color>
+    <color name="splash_star_gold">#FFFFF3C7</color>
+    <color name="splash_star_lavender">#FFC7B8FF</color>
 </resources>
