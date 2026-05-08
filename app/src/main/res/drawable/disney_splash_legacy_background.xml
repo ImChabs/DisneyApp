@@ -3,11 +3,11 @@
     <item android:drawable="@drawable/disney_splash_legacy_sky" />
     <item android:drawable="@drawable/disney_splash_legacy_stars" />
     <item
-        android:width="248dp"
-        android:height="112dp"
+        android:width="180dp"
+        android:height="180dp"
         android:gravity="center">
         <bitmap
-            android:src="@drawable/disney_splash_wordmark"
+            android:src="@drawable/disney_splash_system_logo"
             android:gravity="fill" />
     </item>
 </layer-list>
