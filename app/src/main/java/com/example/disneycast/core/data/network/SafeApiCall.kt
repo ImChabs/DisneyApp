@@ -1,5 +1,7 @@
 package com.example.disneycast.core.data.network
 
+import android.util.Log
+import com.example.disneycast.BuildConfig
 import com.example.disneycast.core.domain.DataError
 import com.example.disneycast.core.domain.Result
 import io.ktor.client.call.body
@@ -40,12 +42,20 @@ suspend inline fun <reified Response : Any> safeApiCall(
         Result.Failure(DataError.Network.UNKNOWN)
     }
 
+private const val SAFE_API_LOG_TAG = "DisneyCast"
+
 @PublishedApi
 internal fun logSafeApiException(error: DataError.Network, exception: Exception) {
-    println(
-        "DisneyCast safeApiCall mapped ${exception::class.qualifiedName} " +
-            "to $error: ${exception.message.orEmpty()}"
-    )
+    if (!BuildConfig.DEBUG) return
+    val message =
+        "safeApiCall mapped ${exception::class.qualifiedName} to $error: " +
+            exception.message.orEmpty()
+    try {
+        Log.d(SAFE_API_LOG_TAG, message)
+    } catch (_: RuntimeException) {
+        // JVM unit tests use a stub Log that throws unless mocked (see Android Gradle Plugin docs).
+        System.err.println("$SAFE_API_LOG_TAG: $message")
+    }
 }
 
 suspend inline fun <reified Response : Any> responseToResult(

@@ -19,3 +19,25 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# --- kotlinx.serialization (Ktor JSON body) ---
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.AnnotationsKt
+-keepclassmembers class kotlinx.serialization.json.** {
+    *** Companion;
+}
+-keepclasseswithmembers class **$$serializer {
+    *** INSTANCE;
+}
+-keepclassmembers class **$$serializer {
+    *** INSTANCE;
+}
+
+# --- Koin (runtime module wiring) ---
+-keep class org.koin.** { *; }
+
+# --- Firebase / Play Services (Analytics) ---
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
