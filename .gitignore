@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Firebase — descarga desde Firebase Console; no subir claves al remoto
+app/google-services.json
